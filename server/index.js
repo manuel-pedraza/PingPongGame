@@ -5,6 +5,14 @@ const io = new Server();
 
 io.on("connection", (socket) => {
 
+    console.log("Socket connected", socket.id);
+
+    socket.on("disconnect", () => {
+        console.log("Socket disconnected");
+    })
+
 });
 
-io.listen(3000);
+io.listen(3000, () => {
+    console.log("listenning on port *: 3000");
+});

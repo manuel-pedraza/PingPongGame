@@ -4,9 +4,13 @@
   "description": "Client version of Sockets project",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "Manuel Alejandro Pedraza Sanchez",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "socket.io-client": "^4.7.2"
+  }
 }
