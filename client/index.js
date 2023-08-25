@@ -6,7 +6,10 @@ const readline = require("node:readline/promises").createInterface({
 });
 
 let userName = "";
+let opponent = "";
+let roomName = "";
 let connectedToServer = false;
+
 
 async function askForName() {
 
@@ -24,13 +27,34 @@ readline.on("close", () => {
 async function socketInit() {
     console.log("Connecting to server");
     socket = io("http://localhost:3000");
-    
+
     socket.on("connect", () => {
         console.log("Connected to server");
 
         menu();
     });
 
+    socket.on("joinRoom", (rName) => {
+        roomName = rName;
+        console.log(`${userName} joined the room`);
+    })
+
+}
+
+async function waitInRoom() {
+    console.log("Joining Room ...");
+    let userAnswer = "";
+
+    while (userAnswer !== "exit") {
+        console.log(`Players:
+    (Host) (You) ${userName} 
+    ${opponent === "" ? "[Open]" : opponent}`
+        );
+        userAnswer = (await readline.question("Waiting ... (type 'exit' to quit the room): ")).trim();
+        console.clear();
+
+        // do something to join room
+    }
 }
 
 function showMenu() {
@@ -41,26 +65,59 @@ function showMenu() {
     );
 }
 
-function seeRoomListMenu(){
-
+function showRoomListMenu() {
+    console.log(
+        `Options:
+    1. Join room name
+    2. Refresh room list`
+    );
 }
 
-async function menu(){
+function showRoomList() {
+    console.log("Rooms list: ");
+    getRoomList().forEach(r => {
+        console.log(`   Name: ${r} | Host: ${"someone"}`);
+    });
+}
+
+async function seeRoomListMenu() {
     let userAnswer = "";
+
+    while (userAnswer !== "b") {
+        console.clear();
+        showRoomList();
+        showRoomListMenu();
+        userAnswer = (await readline.question("Choose a room (type 'b' to back): ")).trim();
+
+
+        // do something to join room
+    }
+}
+
+async function menu() {
+    let userAnswer = "";
+
 
     while (userAnswer !== "exit") {
         showMenu();
-        userAnswer = (await readline.question("Choice (type 'exit' to quit the program): ")).trim();
+        userAnswer = (await readline.question("Choose (type 'exit' to quit the program): ")).trim();
         console.clear();
 
         switch (userAnswer) {
             case "1":
-                seeRoomListMenu();
+                await seeRoomListMenu();
+                console.clear();
                 break;
             case "2":
+                const wasRoomCreated = await createRoom();
+                if (wasRoomCreated) {
+                    await waitInRoom();
+                }
                 break;
             case "exit":
-                continue;
+                console.log("Quited the program");
+                readline.close();
+                process.exit(1);
             default:
                 console.log("Not a valid option");
                 break;
@@ -69,16 +126,23 @@ async function menu(){
     }
 }
 
-function creatRoom() {
+async function createRoom() {
 
+    let userAnswer = "";
+
+    while (userAnswer === "") {
+        userAnswer = (await readline.question("Type your name's room (type 'b' to back): ")).trim();
+
+        if (userAnswer === "b")
+            return false;
+    }
+
+    socket.emit("createRoom", [userAnswer, userName]);
+    return true;
 }
 
-function getRoomList(){
+function getRoomList() {
     return ['1', '2'];
-}
-
-function showRoomList(){
-
 }
 
 function joinRoom(roomName) {

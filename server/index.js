@@ -12,6 +12,11 @@ io.on("connection", (socket) => {
         console.log("Socket disconnected");
     });
 
+    socket.on("createRoom", (roomName) => {
+        console.log("CREATED ROOM", roomName);
+        io.to(roomName).emit("joinRoom", roomName);
+    });
+
 });
 
 
