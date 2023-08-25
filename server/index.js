@@ -1,5 +1,4 @@
 const { Server } = require("socket.io");
-
 const io = new Server();
 
 // const io = new Server(3000, {options});
@@ -14,7 +13,13 @@ io.on("connection", (socket) => {
     socket.on("createRoom", (room, name) => {
         console.log("CREATED ROOM", room);
         socket.join(room);
-        socket.emit("joinRoom", room, name);
+        socket.emit("roomCreated", room, name, name);
+    });
+    
+    socket.on("joinedRoomFromList", (room, opponent) => {
+        socket.join(room);
+        socket.emit("joinRoom", room, opponent);
+        io.to(room).emit("opponentJoined", opponent)
     });
 
 });

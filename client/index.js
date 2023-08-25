@@ -8,7 +8,8 @@ const readline = require("node:readline/promises").createInterface({
 let userName = "";
 let opponent = "";
 let roomName = "";
-let connectedToServer = false;
+let isHost = false;
+let canStartGame = false;
 
 
 async function askForName() {
@@ -34,62 +35,87 @@ async function socketInit() {
         menu();
     });
 
-    socket.on("joinRoom", (room, name) => {
+    socket.on("roomCreated", (room, name, host) => {
         roomName = room;
+        isHost = host === userName;
         console.log(`${name} joined the room`);
         waitInRoom();
     })
 
+    socket.on("opponentJoined", (room, name) => {
+        // console.log("Host:", host, isHost);
+        console.log(`${name} joined the room`);
+        opponent = name;
+        canStartGame = true;
+        waitInRoom();
+    });
+
+    socket.on("joinedRoomFromList", (room, name) => {
+        roomName = room;
+        isHost = false;
+        canStartGame = true;
+        console.log(`${name} joined the room`);
+        waitInRoom();
+    })
 }
 
 async function waitInRoom() {
     let userAnswer = "";
-    while (userAnswer !== "exit") {
+    const waiting = "Waiting ... (type 'exit' to quit the room): ";
+    const optionToStart = `S: start the game\r\nE: to exit the room`;
+    const waitingHostToStart = `Waiting from ${opponent} to start the game`;
 
-        console.log(`${roomName}`);
-        console.log(`Players:
-    (Host) (You) ${userName} 
-    ${opponent === "" ? "[Open]" : opponent}`
-        );
-        userAnswer = (await readline.question("Waiting ... (type 'exit' to quit the room): ")).trim();
-        console.clear();
+    const question = isHost && canStartGame ? optionToStart : isHost ? waiting : waitingHostToStart; 
 
-        // do something to join room
-    }
+    console.log(`${roomName}`);
+    console.log(`Players:
+    ${isHost ? "(Host) " : ""}(You) ${userName} 
+    ${!isHost ? "(Host) " : ""}${opponent === "" ? "[Open]" : opponent}`
+    );
+    userAnswer = (await readline.question(question)).trim();
+    console.clear();
+
+
+
+    if(userAnswer === "exit")
+        menu();
+    else
+        waitInRoom();    
+    // do something to join game
 }
 
 function showMenu() {
     console.log(
         `Options:
-    1. See Room List
-    2. Create Room`
+    1: See Room List
+    2: Create Room`
     );
 }
 
 function showRoomListMenu() {
     console.log(
         `Options:
-    1. Join room name
-    2. Refresh room list`
+    1: Join room name
+    2: Refresh room list`
     );
 }
 
 function showRoomList() {
-    console.log("Rooms list: ");
+    console.log("Room list: ");
     getRoomList().forEach(r => {
-        console.log(`   Name: ${r} | Host: ${"someone"}`);
+        console.log(`\tName: ${r} | Host: ${"someone"}`);
     });
 }
 
-async function seeRoomListMenu() {
+async function interfaceRoomListMenu() {
     let userAnswer = "";
 
-    while (userAnswer !== "b") {
-        console.clear();
+    while (userAnswer.toLowerCase() !== "b") {
         showRoomList();
         showRoomListMenu();
         userAnswer = (await readline.question("Choose a room (type 'b' to back): ")).trim();
-
+        
+        console.clear();
 
         // do something to join room
     }
@@ -112,7 +138,7 @@ async function menu() {
                 showMenu();
                 userAnswer = (await readline.question("Choose (type 'exit' to quit the program): ")).trim();
 
-                switch (userAnswer) {
+                switch (userAnswer.toLowerCase()) {
                     case "1":
                         state = "joinRoom";
                         break;
@@ -136,7 +162,7 @@ async function menu() {
                 console.log("Creating Room");
                 return;
             case "joinRoom":
-                const result = await seeRoomListMenu();
+                const result = await interfaceRoomListMenu();
 
                 break;
 
@@ -160,7 +186,7 @@ async function createRoom() {
     while (room === "") {
         room = (await readline.question("Type your name's room (type 'b' to back): ")).trim();
 
-        if (room === "b")
+        if (room.toLowerCase() === "b")
             return false;
     }
 
