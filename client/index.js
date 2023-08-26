@@ -10,7 +10,7 @@ let opponent = "";
 let roomName = "";
 let isHost = false;
 let canStartGame = false;
-
+let lstRooms = [];
 
 async function askForName() {
 
@@ -38,11 +38,12 @@ async function socketInit() {
     socket.on("roomCreated", (room, name, host) => {
         roomName = room;
         isHost = host === userName;
+        console.log(`Room created`);
         console.log(`${name} joined the room`);
         waitInRoom();
     })
 
-    socket.on("opponentJoined", (room, name) => {
+    socket.on("opponentJoined", (name) => {
         // console.log("Host:", host, isHost);
         console.log(`${name} joined the room`);
         opponent = name;
@@ -54,18 +55,31 @@ async function socketInit() {
         roomName = room;
         isHost = false;
         canStartGame = true;
+        readline.resume();
         console.log(`${name} joined the room`);
         waitInRoom();
-    })
+    });
+
+    socket.on("requestRoomList", (roomList) => {
+        lstRooms = roomList;
+        console.log("Room list: ", roomList);
+        interfaceRoomListMenu()
+    });
+
+    socket.on("roomIsFull", () => {
+        console.log("Someone already joined the room");
+        interfaceRoomListMenu()
+    });
 }
 
 async function waitInRoom() {
     let userAnswer = "";
-    const waiting = "Waiting ... (type 'exit' to quit the room): ";
-    const optionToStart = `S: start the game\r\nE: to exit the room`;
+    const eToExit = "E: to exit the room";
+    const waiting = "Waiting ...\r\n" + eToExit;
+    const optionToStart = `S: start the game\r\n` + eToExit;
     const waitingHostToStart = `Waiting from ${opponent} to start the game`;
 
-    const question = isHost && canStartGame ? optionToStart : isHost ? waiting : waitingHostToStart; 
+    const question = isHost && canStartGame ? optionToStart : isHost ? waiting : waitingHostToStart;
 
     console.log(`${roomName}`);
     console.log(`Players:
@@ -76,11 +90,15 @@ async function waitInRoom() {
     console.clear();
 
 
-
-    if(userAnswer === "exit")
-        menu();
-    else
-        waitInRoom();    
+    switch (userAnswer.toLowerCase()) {
+        case "exit":
+            menu();
+            break;
+    
+        default:
+            waitInRoom();
+            break;
+    }
     // do something to join game
 }
 
@@ -102,7 +120,7 @@ function showRoomListMenu() {
 
 function showRoomList() {
     console.log("Room list: ");
-    getRoomList().forEach(r => {
+    lstRooms.forEach(r => {
         console.log(`\tName: ${r} | Host: ${"someone"}`);
     });
 }
@@ -110,15 +128,28 @@ function showRoomList() {
 async function interfaceRoomListMenu() {
     let userAnswer = "";
 
-    while (userAnswer.toLowerCase() !== "b") {
-        showRoomList();
-        showRoomListMenu();
-        userAnswer = (await readline.question("Choose a room (type 'b' to back): ")).trim();
-        
-        console.clear();
+    showRoomList();
+    showRoomListMenu();
+    userAnswer = (await readline.question("Choose an option (type 'b' to back): ")).trim();
 
-        // do something to join room
+    switch (userAnswer.toLowerCase()) {
+        case "b":
+            menu();
+            break;
+        case "1":
+            userAnswer = (await readline.question("Enter the room's name: ")).trim();
+            socket.emit("requestJoinRoomByRList", userAnswer, userName);
+            break;
+        case "2":
+            socket.emit("requestRoomList");
+            break;
+        default:
+            interfaceRoomListMenu();
+            break;
     }
+
+
+    // do something to join room
 }
 
 async function menu() {
@@ -131,51 +162,36 @@ async function menu() {
     let state = "menu";
 
 
-    while (userAnswer !== "exit") {
+    while (userAnswer.toLowerCase() !== "exit" && state === "menu") {
+        showMenu();
+        userAnswer = (await readline.question("Choose (type 'exit' to quit the program): ")).trim();
 
-        switch (state) {
-            case "menu":
-                showMenu();
-                userAnswer = (await readline.question("Choose (type 'exit' to quit the program): ")).trim();
-
-                switch (userAnswer.toLowerCase()) {
-                    case "1":
-                        state = "joinRoom";
-                        break;
-                    case "2":
-                        const wasRoomCreated = await createRoom();
-                        if (wasRoomCreated) {
-                            state = "waitInRoom";
-                        }
-                        break;
-                    case "exit":
-                        console.log("Quited the program");
-                        readline.close();
-                        process.exit(1);
-                    default:
-                        console.log("Not a valid option");
-                        break;
-                }
-
-                break;
-            case "waitInRoom":
-                console.log("Creating Room");
+        switch (userAnswer.toLowerCase()) {
+            case "1":
+                state = "joinRoom";
+                console.clear();
+                console.log("Getting room list");
+                socket.emit("requestRoomList");
                 return;
-            case "joinRoom":
-                const result = await interfaceRoomListMenu();
-
+            case "2":
+                const wasRoomCreated = await createRoom();
+                if (wasRoomCreated) {
+                    state = "waitInRoom";
+                    console.clear();
+                    console.log("Creating Room");
+                    return;
+                }
                 break;
-
+            case "exit":
+                console.log("Quited the program");
+                readline.close();
+                process.exit(1);
             default:
-                console.log("An error has occured");
-                process.exit(-1);
+                console.log("Not a valid option");
+                break;
         }
 
         console.clear();
-
-
-
-
     }
 }
 
@@ -192,14 +208,6 @@ async function createRoom() {
 
     socket.emit("createRoom", room, userName);
     return true;
-}
-
-function getRoomList() {
-    return ['1', '2'];
-}
-
-function joinRoom(roomName) {
-
 }
 
 async function main() {
