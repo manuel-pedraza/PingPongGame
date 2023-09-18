@@ -45,26 +45,27 @@ async function socketInit() {
         askForName();
     });
 
-    socket.on("roomCreated", (lobby) => {
-        lobby = lobby;
+    socket.on("roomCreated", (resLobby) => {
+        console.log(resLobby);
+        lobby = new Lobby(resLobby);
         isHost = lobby.host === userName;
         console.log(`Room created`);
         console.log(`${userName} joined the room`);
-        waitInCreatedRoom();
+        waitInRoom();
     })
 
     socket.on("invalidRoomName", () => {
-        
+
         console.log(`Failed to join the room`);
         interfaceRoomListMenu();
     })
 
-    socket.on("opponentJoined", (lobby) => {
+    socket.on("opponentJoined", (resLobby) => {
         // console.log("Host:", host, isHost);à
-        lobby = new Lobby(lobby);
+        lobby = new Lobby(resLobby);
         console.log(`${lobby.opponent} joined the room`);
         canStartGame = true;
-        waitInCreatedRoom();
+        waitInRoom();
     });
 
     socket.on("userAlreadyExists", () => {
@@ -79,18 +80,18 @@ async function socketInit() {
 
     });
 
-    socket.on("joinedRoomFromList", (lobby) => {
-        lobby = new Lobby(lobby);
+    socket.on("joinedRoomFromList", (resLobby) => {
+        lobby = new Lobby(resLobby);
         isHost = false;
         canStartGame = true;
         readline.resume();
         console.log(`${lobby.opponent} joined the room`);
-        waitInJoinedRoom();
+        waitInRoom();
     });
 
     socket.on("requestRoomList", (roomList) => {
         lstRooms = roomList;
-        console.log(`${lstRooms.length} Rooms`);
+        console.log(`${lstRooms.length} Room(s)`);
         interfaceRoomListMenu()
     });
 
@@ -99,29 +100,23 @@ async function socketInit() {
         interfaceRoomListMenu()
     });
 }
-async function waitInCreatedRoom() {
-
-}
-
-async function waitInJoinedRoom() {
-
-}
 
 
 async function waitInRoom() {
+
     let userAnswer = "";
     const eToExit = "E: to exit the room\r\n";
     const waiting = "Waiting ...\r\n" + eToExit;
     const optionToStart = `S: start the game\r\n` + eToExit;
-    const waitingHostToStart = `Waiting from ${lobby.opponent} to start the game`;
+    const waitingHostToStart = `Waiting for ${lobby.host} to start the game\r\n`;
 
     let question = isHost && canStartGame ? optionToStart : isHost ? waiting : waitingHostToStart;
     question += "Option: ";
 
     console.log(`${lobby.name}`);
     console.log(`Players:
-    ${isHost ? "(Host) " : ""}(You) ${userName} 
-    ${!isHost ? "(Host) " : ""}${lobby.opponent === "" ? "[Open]" : lobby.opponent}`
+    (Host) ${isHost ? "(You) " : ""}${lobby.host} 
+    ${!isHost ? "(You) " : ""}${lobby.opponent === "" ? "[Open]" : lobby.opponent}`
     );
     userAnswer = (await readline.question(question)).trim();
     console.clear();
@@ -158,14 +153,14 @@ function showRoomListMenu() {
 
 function showRoomList() {
     console.log("Room list: ");
-    lstRooms.forEach(r => {
-        console.log(`\tName: ${r.name} | Host: ${r.host}`);
+    lstRooms.forEach(l => {
+        console.log(`\tName: ${l.name} | Host: ${l.host} ${l.opponent ? ("| Opponent: " + l.opponent) : ""}`);
     });
 }
 
 async function interfaceRoomListMenu() {
     let userAnswer = "";
-
+    clear();
     showRoomList();
     showRoomListMenu();
     userAnswer = (await readline.question("Choose an option (type 'b' to back): ")).trim();
@@ -185,7 +180,6 @@ async function interfaceRoomListMenu() {
             interfaceRoomListMenu();
             break;
     }
-    console.clear();
 
 
 

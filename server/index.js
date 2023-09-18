@@ -53,12 +53,13 @@ io.on("connection", (socket) => {
     });
 
     socket.on("createRoom", (room, name) => {
-        const lobby = new Lobby({ name: room, host: name });
-        lstLobbies.push(lobby);
+        const resLobby = new Lobby({ name: room, host: name });
+        lstLobbies.push(resLobby);
+        console.log(lstLobbies);
 
         console.log(`${socket.id} ${name} created room ${room}`);
         socket.join(room);
-        socket.emit("roomCreated", lobby);
+        socket.emit("roomCreated", resLobby);
     });
 
     // socket.on("joinedRoomFromList", (room, opponent) => {
