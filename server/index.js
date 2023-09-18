@@ -1,6 +1,8 @@
 const { Server } = require("socket.io");
+import userData from "./classes/userData";
 const io = new Server();
 
+let lstUsers = new Set();
 // const io = new Server(3000, {options});
 
 io.on("connection", (socket) => {
@@ -8,6 +10,23 @@ io.on("connection", (socket) => {
     console.log("Socket connected " + socket.id);
     socket.on("disconnect", () => {
         console.log("Socket disconnected ", socket.id);
+    });
+
+    socket.on("addUser", (userToAdd) => {
+        if (lstUsers.has(userToAdd))
+            socket.emit("userAlreadyExists");
+        else{
+            lstUsers.add(userToAdd);
+            socket.emit("userCreated");
+
+        }
+    });
+
+    socket.on("disconnect", (reason, user) => {
+
+        console.log(reason);
+        if (lstUsers.has(user))
+            lstUsers.delete(user);
     });
 
     socket.on("createRoom", (room, name) => {

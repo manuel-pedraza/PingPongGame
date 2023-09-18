@@ -1,3 +1,8 @@
+// SOCKET.IO API LINK: https://socket.io/docs/v4/server-api/#serveremiteventname-args
+// SOCKET.IO DOCS: https://socket.io/docs/v4/how-it-works/
+// SOCKET.IO GET-STARTED APP: https://socket.io/get-started/chat
+// READLINE DOCS: https://nodejs.org/api/readline.html
+
 const { io, connect } = require("socket.io-client");
 let socket = undefined;
 const readline = require("node:readline/promises").createInterface({
@@ -8,17 +13,23 @@ const readline = require("node:readline/promises").createInterface({
 let userName = "";
 let opponent = "";
 let roomName = "";
+let isNameValid = false;
 let isHost = false;
 let canStartGame = false;
 let lstRooms = [];
 
 async function askForName() {
 
-    do {
-        console.clear();
-        const answer = await readline.question("Enter a player name: ");
-        userName = answer.trim();
-    } while (userName === "" || userName === undefined)
+    if (isNameValid)
+        return;
+
+    const answer = await readline.question("Enter a player name: ");
+    userName = answer.trim();
+    if (!(userName === "" || userName === undefined))
+        socket.emit("addUser", userName);
+    else
+        askForName();
+
 }
 
 readline.on("close", () => {
@@ -31,8 +42,7 @@ async function socketInit() {
 
     socket.on("connect", () => {
         console.log("Connected to server");
-
-        menu();
+        askForName();
     });
 
     socket.on("roomCreated", (room, name, host) => {
@@ -49,6 +59,18 @@ async function socketInit() {
         opponent = name;
         canStartGame = true;
         waitInRoom();
+    });
+
+    socket.on("userAlreadyExists", () => {
+        console.log("User already exists");
+        askForName()
+    });
+
+    socket.on("userCreated", () => {
+        console.log("User created");
+        isNameValid = true;
+        menu();
+
     });
 
     socket.on("joinedRoomFromList", (room, name) => {
@@ -91,10 +113,10 @@ async function waitInRoom() {
 
 
     switch (userAnswer.toLowerCase()) {
-        case "exit":
+        case "e":
             menu();
             break;
-    
+
         default:
             waitInRoom();
             break;
@@ -147,6 +169,8 @@ async function interfaceRoomListMenu() {
             interfaceRoomListMenu();
             break;
     }
+    console.clear();
+
 
 
     // do something to join room
@@ -174,10 +198,10 @@ async function menu() {
                 socket.emit("requestRoomList");
                 return;
             case "2":
+                console.clear();
                 const wasRoomCreated = await createRoom();
                 if (wasRoomCreated) {
                     state = "waitInRoom";
-                    console.clear();
                     console.log("Creating Room");
                     return;
                 }
@@ -210,10 +234,7 @@ async function createRoom() {
     return true;
 }
 
-async function main() {
-    await askForName();
-    socketInit();
-}
 
-main();
+
+socketInit();
 
