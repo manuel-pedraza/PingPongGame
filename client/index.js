@@ -53,6 +53,12 @@ async function socketInit() {
         waitInRoom();
     })
 
+    socket.on("invalidRoomName", () => {
+        
+        console.log(`Failed to join the room`);
+        interfaceRoomListMenu();
+    })
+
     socket.on("opponentJoined", (name) => {
         // console.log("Host:", host, isHost);
         console.log(`${name} joined the room`);
@@ -84,7 +90,7 @@ async function socketInit() {
 
     socket.on("requestRoomList", (roomList) => {
         lstRooms = roomList;
-        console.log("Room list: ", roomList);
+        console.log(`${lstRooms.length()} Rooms`);
         interfaceRoomListMenu()
     });
 
@@ -93,15 +99,18 @@ async function socketInit() {
         interfaceRoomListMenu()
     });
 }
+// async function waitInCreatedRoom() 
+// async function waitInJoinedRoom() 
 
 async function waitInRoom() {
     let userAnswer = "";
-    const eToExit = "E: to exit the room";
+    const eToExit = "E: to exit the room\r\n";
     const waiting = "Waiting ...\r\n" + eToExit;
     const optionToStart = `S: start the game\r\n` + eToExit;
     const waitingHostToStart = `Waiting from ${opponent} to start the game`;
 
-    const question = isHost && canStartGame ? optionToStart : isHost ? waiting : waitingHostToStart;
+    let question = isHost && canStartGame ? optionToStart : isHost ? waiting : waitingHostToStart;
+    question += "Option: ";
 
     console.log(`${roomName}`);
     console.log(`Players:

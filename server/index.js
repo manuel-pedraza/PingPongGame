@@ -1,8 +1,9 @@
 const { Server } = require("socket.io");
-import userData from "./classes/userData";
+
+const User = require("./classes/User.js");
 const io = new Server();
 
-let lstUsers = new Set();
+let lstUsers = new Map();
 // const io = new Server(3000, {options});
 
 io.on("connection", (socket) => {
@@ -13,20 +14,35 @@ io.on("connection", (socket) => {
     });
 
     socket.on("addUser", (userToAdd) => {
-        if (lstUsers.has(userToAdd))
+
+        let userTaken = false;
+        console.log(userToAdd);
+        console.log("lstUsers: " , lstUsers);
+        for (const user of lstUsers.values()) {
+            console.log(user.name);
+            if (user.name === userToAdd) {
+                userTaken = true;
+                break;
+            }
+        }
+
+        if (lstUsers.has(socket.id) || userTaken)
             socket.emit("userAlreadyExists");
-        else{
-            lstUsers.add(userToAdd);
+        else {
+            const user = new User({name: userToAdd});
+            lstUsers.set(socket.id, user);
             socket.emit("userCreated");
 
         }
     });
 
-    socket.on("disconnect", (reason, user) => {
+    socket.on("disconnect", (reason) => {
 
-        console.log(reason);
-        if (lstUsers.has(user))
-            lstUsers.delete(user);
+
+        if (lstUsers.has(socket.id)) {
+            console.log(lstUsers.get(socket.id).name + " was removed");
+            lstUsers.delete(socket.id);
+        }
     });
 
     socket.on("createRoom", (room, name) => {
@@ -68,7 +84,10 @@ io.on("connection", (socket) => {
     socket.on("requestJoinRoomByRList", (room, name) => {
         const clients = io.sockets.adapter.rooms.get(room);
 
-        if (clients.size >= 2)
+        if (clients === undefined) {
+            socket.emit("invalidRoomName")
+        }
+        else if (clients.size >= 2)
             socket.emit("roomIsFull");
         else {
             socket.join(room);

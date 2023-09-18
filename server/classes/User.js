@@ -1,12 +1,10 @@
-class userData {
+class User {
 
     constructor({
-        id = undefined,
         name = ""
     } = {}) {
         this.name = name;
-        this.id = id
     }
 }
 
-export default userData;
+module.exports = User;
