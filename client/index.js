@@ -4,6 +4,7 @@
 // READLINE DOCS: https://nodejs.org/api/readline.html
 
 const { io, connect } = require("socket.io-client");
+const Lobby = require("../server/classes/Lobby");
 let socket = undefined;
 const readline = require("node:readline/promises").createInterface({
     input: process.stdin,
@@ -11,12 +12,11 @@ const readline = require("node:readline/promises").createInterface({
 });
 
 let userName = "";
-let opponent = "";
-let roomName = "";
 let isNameValid = false;
 let isHost = false;
 let canStartGame = false;
 let lstRooms = [];
+let lobby = undefined;
 
 async function askForName() {
 
@@ -45,12 +45,12 @@ async function socketInit() {
         askForName();
     });
 
-    socket.on("roomCreated", (room, name, host) => {
-        roomName = room;
-        isHost = host === userName;
+    socket.on("roomCreated", (lobby) => {
+        lobby = lobby;
+        isHost = lobby.host === userName;
         console.log(`Room created`);
-        console.log(`${name} joined the room`);
-        waitInRoom();
+        console.log(`${userName} joined the room`);
+        waitInCreatedRoom();
     })
 
     socket.on("invalidRoomName", () => {
@@ -59,12 +59,12 @@ async function socketInit() {
         interfaceRoomListMenu();
     })
 
-    socket.on("opponentJoined", (name) => {
-        // console.log("Host:", host, isHost);
-        console.log(`${name} joined the room`);
-        opponent = name;
+    socket.on("opponentJoined", (lobby) => {
+        // console.log("Host:", host, isHost);à
+        lobby = new Lobby(lobby);
+        console.log(`${lobby.opponent} joined the room`);
         canStartGame = true;
-        waitInRoom();
+        waitInCreatedRoom();
     });
 
     socket.on("userAlreadyExists", () => {
@@ -79,18 +79,18 @@ async function socketInit() {
 
     });
 
-    socket.on("joinedRoomFromList", (room, name) => {
-        roomName = room;
+    socket.on("joinedRoomFromList", (lobby) => {
+        lobby = new Lobby(lobby);
         isHost = false;
         canStartGame = true;
         readline.resume();
-        console.log(`${name} joined the room`);
-        waitInRoom();
+        console.log(`${lobby.opponent} joined the room`);
+        waitInJoinedRoom();
     });
 
     socket.on("requestRoomList", (roomList) => {
         lstRooms = roomList;
-        console.log(`${lstRooms.length()} Rooms`);
+        console.log(`${lstRooms.length} Rooms`);
         interfaceRoomListMenu()
     });
 
@@ -99,23 +99,29 @@ async function socketInit() {
         interfaceRoomListMenu()
     });
 }
-// async function waitInCreatedRoom() 
-// async function waitInJoinedRoom() 
+async function waitInCreatedRoom() {
+
+}
+
+async function waitInJoinedRoom() {
+
+}
+
 
 async function waitInRoom() {
     let userAnswer = "";
     const eToExit = "E: to exit the room\r\n";
     const waiting = "Waiting ...\r\n" + eToExit;
     const optionToStart = `S: start the game\r\n` + eToExit;
-    const waitingHostToStart = `Waiting from ${opponent} to start the game`;
+    const waitingHostToStart = `Waiting from ${lobby.opponent} to start the game`;
 
     let question = isHost && canStartGame ? optionToStart : isHost ? waiting : waitingHostToStart;
     question += "Option: ";
 
-    console.log(`${roomName}`);
+    console.log(`${lobby.name}`);
     console.log(`Players:
     ${isHost ? "(Host) " : ""}(You) ${userName} 
-    ${!isHost ? "(Host) " : ""}${opponent === "" ? "[Open]" : opponent}`
+    ${!isHost ? "(Host) " : ""}${lobby.opponent === "" ? "[Open]" : lobby.opponent}`
     );
     userAnswer = (await readline.question(question)).trim();
     console.clear();
@@ -127,6 +133,7 @@ async function waitInRoom() {
             break;
 
         default:
+
             waitInRoom();
             break;
     }
@@ -152,7 +159,7 @@ function showRoomListMenu() {
 function showRoomList() {
     console.log("Room list: ");
     lstRooms.forEach(r => {
-        console.log(`\tName: ${r} | Host: ${"someone"}`);
+        console.log(`\tName: ${r.name} | Host: ${r.host}`);
     });
 }
 

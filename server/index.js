@@ -1,9 +1,11 @@
 const { Server } = require("socket.io");
 
 const User = require("./classes/User.js");
+const Lobby = require("./classes/Lobby.js");
 const io = new Server();
 
 let lstUsers = new Map();
+let lstLobbies = [];
 // const io = new Server(3000, {options});
 
 io.on("connection", (socket) => {
@@ -16,8 +18,6 @@ io.on("connection", (socket) => {
     socket.on("addUser", (userToAdd) => {
 
         let userTaken = false;
-        console.log(userToAdd);
-        console.log("lstUsers: " , lstUsers);
         for (const user of lstUsers.values()) {
             console.log(user.name);
             if (user.name === userToAdd) {
@@ -29,7 +29,7 @@ io.on("connection", (socket) => {
         if (lstUsers.has(socket.id) || userTaken)
             socket.emit("userAlreadyExists");
         else {
-            const user = new User({name: userToAdd});
+            const user = new User({ name: userToAdd });
             lstUsers.set(socket.id, user);
             socket.emit("userCreated");
 
@@ -38,27 +38,39 @@ io.on("connection", (socket) => {
 
     socket.on("disconnect", (reason) => {
 
-
         if (lstUsers.has(socket.id)) {
+            const name = lstUsers.get(socket.id).name;
+
             console.log(lstUsers.get(socket.id).name + " was removed");
             lstUsers.delete(socket.id);
+
+            const index = lstLobbies.findIndex(l => l.host === name || l.opponent === name);
+
+            if (index > -1)
+                lstLobbies.splice(index, 1);
+
         }
     });
 
     socket.on("createRoom", (room, name) => {
+        const lobby = new Lobby({ name: room, host: name });
+        lstLobbies.push(lobby);
+
         console.log(`${socket.id} ${name} created room ${room}`);
         socket.join(room);
-        socket.emit("roomCreated", room, name, name);
+        socket.emit("roomCreated", lobby);
     });
 
-    socket.on("joinedRoomFromList", (room, opponent) => {
-        socket.join(room);
-        socket.emit("joinRoom", room, opponent);
-        io.to(room).emit("opponentJoined", opponent)
-    });
+    // socket.on("joinedRoomFromList", (room, opponent) => {
+
+
+    //     socket.join(room);
+    //     socket.emit("joinRoom", room, opponent);
+    //     io.to(room).emit("opponentJoined", opponent)
+    // });
 
     socket.on("requestRoomList", async () => {
-        const lstSocketsId = (await io.fetchSockets()).map(s => s.id);
+        /*const lstSocketsId = (await io.fetchSockets()).map(s => s.id);
         let lstRoomsToTreat = new Map(io.sockets.adapter.rooms);
 
         lstSocketsId.forEach(sId => {
@@ -70,14 +82,16 @@ io.on("connection", (socket) => {
 
         for (const rtt of lstRoomsToTreat.keys())
             lstRooms.push(rtt);
+        */
 
+        
         /*
         console.log("Rooms: ", io.sockets.adapter.rooms);
         console.log("Sockets: ", lstSocketsId);
         console.log("RTT", lstRoomsToTreat);
         console.log("Rooms: ", lstRooms);
         */
-        socket.emit("requestRoomList", lstRooms);
+        socket.emit("requestRoomList", lstLobbies);
 
     });
 
@@ -90,9 +104,14 @@ io.on("connection", (socket) => {
         else if (clients.size >= 2)
             socket.emit("roomIsFull");
         else {
+            const index = lstLobbies.findIndex(l => l.name === room);
+            lstLobbies[index].opponent = name;
+
+            console.log(lstLobbies);
+
             socket.join(room);
-            io.to(room).emit("opponentJoined", name);
-            socket.emit("joinedRoomFromList", room, name);
+            io.to(room).emit("opponentJoined", lstLobbies[index]);
+            socket.emit("joinedRoomFromList", lstLobbies[index]);
         }
 
 
