@@ -2,7 +2,12 @@ const { Server } = require("socket.io");
 
 const User = require("./classes/User.js");
 const Lobby = require("./classes/Lobby.js");
-const io = new Server();
+const io = new Server( {cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["my-custom-header"],
+    credentials: true
+}});
 
 let lstUsers = new Map();
 let lstLobbies = [];
@@ -126,7 +131,7 @@ io.on("connection", (socket) => {
 
 });
 
-io.listen(3000, () => {
-    console.log("listenning on port *: 3000");
+io.listen(3001, () => {
+    console.log("listenning on port *: 3001");
 });
 
