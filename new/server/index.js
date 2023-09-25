@@ -73,14 +73,6 @@ io.on("connection", (socket) => {
         socket.emit("roomCreated", resLobby);
     });
 
-    // socket.on("joinedRoomFromList", (room, opponent) => {
-
-
-    //     socket.join(room);
-    //     socket.emit("joinRoom", room, opponent);
-    //     io.to(room).emit("opponentJoined", opponent)
-    // });
-
     socket.on("requestRoomList", async () => {
         /*const lstSocketsId = (await io.fetchSockets()).map(s => s.id);
         let lstRoomsToTreat = new Map(io.sockets.adapter.rooms);

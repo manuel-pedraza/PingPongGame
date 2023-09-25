@@ -3,9 +3,15 @@ import { createContext, useContext } from "react"
 const SocketContext = createContext();
 import { socket } from "@/classes/socket";
 
+socket.connect();
+
 export function SocketProvider({ children }) {
+    socket.on("connect", () => {
+        console.log("Connected to server");
+    });
 
-
+    
+    
     return <SocketContext.Provider value={{ socket }}>
         {children}
     </SocketContext.Provider>
