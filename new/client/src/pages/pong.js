@@ -3,34 +3,36 @@ import React, { useEffect, useRef } from 'react'
 
 export default function Pong() {
     let context = undefined;
-
+    let canvas = undefined;
 
     const canvasRef = useRef(null);
 
-    const drawBg = (ctx, canvas) => {
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fill()
+    const drawBg = () => {
+        context.fillStyle = '#000000';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.fill()
 
     }
 
-    const drawMiddleLine = (ctx, middle, height) => {
+    const drawMiddleLine = () => {
 
+        const middle = canvas.width / 2;
+        const height = canvas.height;
         const squareSize = 10;
 
-        ctx.fillStyle = "#fff";
+        context.fillStyle = "#fff";
 
         const squaresToDraw = height / squareSize / 2;
 
         for (let i = 0; i <= squaresToDraw; i++) {
-            ctx.fillRect(middle - (squareSize / 2), i * squareSize + (i * squareSize) - (squareSize / 2), squareSize, squareSize);
-            ctx.fill();
+            context.fillRect(middle - (squareSize / 2), i * squareSize + (i * squareSize) - (squareSize / 2), squareSize, squareSize);
+            context.fill();
         }
     }
 
     useEffect(() => {
 
-        const canvas = canvasRef.current;
+        canvas = canvasRef.current;
         context = canvas.getContext("2d");
         let frameCount = 0;
         let animationFrameId;
@@ -73,6 +75,7 @@ export default function Pong() {
             constructor(x, y) {
                 super(x, y);
 
+                this.angle = -1;
                 this.ballSize = 30;
                 this.direction = null;
             }
@@ -81,6 +84,34 @@ export default function Pong() {
                 context.fillStyle = '#ff0000';
                 context.fillRect(this.x - (this.ballSize / 2), this.y - (this.ballSize / 2), this.ballSize, this.ballSize);
                 context.fill()
+            }
+
+            updatePos() {
+                if (this.angle === -1 || this.direction === null)
+                    return;
+
+                const speed = 8;
+                const bXPivot = this.direction === true ? -1 : 1;
+
+                const angleRad = this.angle * (Math.PI / 180);
+
+                const xDelta = Math.sin(angleRad) * bXPivot;
+                const yDelta = Math.cos(angleRad);
+
+                this.x += xDelta * speed;
+                this.y += yDelta * speed;
+
+                // console.log(bXPivot);
+            }
+
+            setNewDirection() {
+                if (this.direction === null)
+                    this.direction = true;
+                else
+                    this.direction = !this.direction;
+
+                this.angle = Math.floor(Math.random() * 90) - 45 + ((this.direction === true ? 1 : -1) * 90);
+
             }
         }
 
@@ -117,18 +148,20 @@ export default function Pong() {
             // console.log(e.elapsedTime);
             context.clearRect(0, 0, canvas.width, canvas.height);
             frameCount++;
-            drawBg(context, canvas);
-            drawMiddleLine(context, canvas.width / 2, canvas.height);
+            drawBg();
+            drawMiddleLine();
 
             // Update Ball new Pos
             let ball = actors.get("ball");
             if (ball !== undefined) {
-                const bX = ball.x, bY = ball.Y;
 
-                if (ball.direction === null)
-                    ball.direction = true;
+                if (ball.direction === null) 
+                    ball.setNewDirection();
                 else {
-                    const bXPivot = ball.direction === true ? -1 : 1;
+                    ball.updatePos()
+                    const p = ball.direction === true ? "p1" : "p2";
+
+                    // Func to see player colision or "wall" collition
                 }
 
             }
