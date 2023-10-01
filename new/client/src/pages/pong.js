@@ -30,6 +30,128 @@ export default function Pong() {
         }
     }
 
+    class Actor {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        draw() {
+
+        }
+
+        updatePos(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    class Player extends Actor {
+        constructor(name, x, y) {
+            super(x, y);
+            this.name = name;
+
+            this.height = 150;
+            this.width = 30;
+        }
+
+        draw() {
+            context.fillStyle = '#fff';
+            // ctx.fillRect(200, 200, 100, 100);
+            context.fillRect(this.x - (this.width / 2), this.y - (this.height / 2), this.width, this.height);
+            context.fill();
+        }
+
+    }
+
+    class Ball extends Actor {
+        constructor(x, y) {
+            super(x, y);
+
+            this.angle = -1;
+            this.ballSize = 30;
+            this.direction = null;
+        }
+
+        draw() {
+            context.fillStyle = '#ff0000';
+            context.fillRect(this.x - (this.ballSize / 2), this.y - (this.ballSize / 2), this.ballSize, this.ballSize);
+            context.fill()
+        }
+
+        hasCollidedWithWall(newY) {
+            return newY - (this.ballSize / 2) <= 0 || newY + (this.ballSize / 2) >= canvas.height;
+        }
+
+        hasCollidedWithPlayer(newX, newY, player) {
+            // See player collision
+            return false;
+        }
+
+        updatePos() {
+            if (this.angle === -1 || this.direction === null)
+                return;
+
+            const speed = 8;
+            // 
+
+            // Rad convertion
+            // const angleRad = this.angle * (Math.PI / 180 * bXPivot);
+            const angleRad = this.angle * (Math.PI / 180);
+
+            const xDelta = Math.cos(angleRad);
+            const yDelta = Math.sin(angleRad);
+
+            const newX = this.x + (xDelta * speed);
+            const newY = this.y + (yDelta * speed);
+
+            const p = this.direction === true ? "p1" : "p2";
+
+            if (this.hasCollidedWithWall(newY)) {
+
+                console.log(xDelta, yDelta);
+
+                const goDown = newY - (this.ballSize / 2) <= 0 
+                
+                const angle90 = Math.abs(this.angle % 90);
+                let addAngle = 0;
+                
+                if(this.direction === true)
+                    addAngle = goDown ? (90 - angle90) * -2 : angle90 * 2;
+                else 
+                    addAngle = goDown ? angle90 * 2 : (90 - angle90) * -2;
+
+                this.angle += addAngle;
+                this.angle %= 360;
+                
+                if(Math.sign(this.angle) === 1){
+                    this.angle = (360 - this.angle) * -1; 
+                }
+
+
+            } else if (this.hasCollidedWithPlayer(newX, newY, p)) {
+
+            } else {
+                this.x = newX;
+                this.y = newY;
+            }
+
+            // console.log(bXPivot);
+        }
+
+        setNewDirection() {
+            if (this.direction === null)
+                this.direction = true;
+            else
+                this.direction = !this.direction;
+
+            const bXPivot = this.direction === true ? 180 : 360;
+
+            this.angle = Math.floor(Math.random() * 90) - 45 + (this.direction === true ? 180 : 0);
+            this.angle *= -1;
+        }
+    }
+
     useEffect(() => {
 
         canvas = canvasRef.current;
@@ -37,83 +159,7 @@ export default function Pong() {
         let frameCount = 0;
         let animationFrameId;
 
-        class Actor {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-            }
 
-            draw() {
-
-            }
-
-            updatePos(x, y) {
-                this.x = x;
-                this.y = y;
-            }
-        }
-
-        class Player extends Actor {
-            constructor(name, x, y) {
-                super(x, y);
-                this.name = name;
-
-                this.height = 150;
-                this.width = 30;
-            }
-
-            draw() {
-                context.fillStyle = '#fff';
-                // ctx.fillRect(200, 200, 100, 100);
-                context.fillRect(this.x - (this.width / 2), this.y - (this.height / 2), this.width, this.height);
-                context.fill();
-            }
-
-        }
-
-        class Ball extends Actor {
-            constructor(x, y) {
-                super(x, y);
-
-                this.angle = -1;
-                this.ballSize = 30;
-                this.direction = null;
-            }
-
-            draw() {
-                context.fillStyle = '#ff0000';
-                context.fillRect(this.x - (this.ballSize / 2), this.y - (this.ballSize / 2), this.ballSize, this.ballSize);
-                context.fill()
-            }
-
-            updatePos() {
-                if (this.angle === -1 || this.direction === null)
-                    return;
-
-                const speed = 8;
-                const bXPivot = this.direction === true ? -1 : 1;
-
-                const angleRad = this.angle * (Math.PI / 180);
-
-                const xDelta = Math.sin(angleRad) * bXPivot;
-                const yDelta = Math.cos(angleRad);
-
-                this.x += xDelta * speed;
-                this.y += yDelta * speed;
-
-                // console.log(bXPivot);
-            }
-
-            setNewDirection() {
-                if (this.direction === null)
-                    this.direction = true;
-                else
-                    this.direction = !this.direction;
-
-                this.angle = Math.floor(Math.random() * 90) - 45 + ((this.direction === true ? 1 : -1) * 90);
-
-            }
-        }
 
         let actors = undefined;
 
@@ -154,14 +200,15 @@ export default function Pong() {
             // Update Ball new Pos
             let ball = actors.get("ball");
             if (ball !== undefined) {
+                if (ball.direction === null) {
 
-                if (ball.direction === null) 
+                    // console.log(ball.angle);
+                    
                     ball.setNewDirection();
+                    console.log(ball.angle);
+                }
                 else {
                     ball.updatePos()
-                    const p = ball.direction === true ? "p1" : "p2";
-
-                    // Func to see player colision or "wall" collition
                 }
 
             }
