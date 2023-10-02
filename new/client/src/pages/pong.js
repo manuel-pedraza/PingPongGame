@@ -79,13 +79,12 @@ export default function Pong() {
             let ball = actors.get("ball");
             if (ball !== undefined) {
                 if (ball.direction === null) {
-
-                    // console.log(ball.angle);
-                    
                     ball.setNewDirection();
-                    console.log(ball.angle);
+                    const p = ball.direction === true ? "p1" : "p2";
+                    ball.player = actors.get(p);
                 }
                 else {
+                    
                     ball.updatePos()
                 }
 
@@ -93,7 +92,7 @@ export default function Pong() {
 
             // Draw actors
             actors.forEach(a => {
-                console.log(a);
+                // console.log(a);
                 a.draw();
             });
 
