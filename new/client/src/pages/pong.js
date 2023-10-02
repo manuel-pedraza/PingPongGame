@@ -7,6 +7,8 @@ export default function Pong() {
     let context = undefined;
     let canvas = undefined;
 
+    let playerTurn = "p1";
+
     const canvasRef = useRef(null);
 
     const drawBg = () => {
@@ -42,7 +44,7 @@ export default function Pong() {
         const mouseMoveHandler = (e) => {
             let p = actors.get("p1");
 
-            if (p !== undefined){
+            if (p !== undefined) {
                 const speed = Math.abs(p.y - e.y);
                 p.speedQueue.enqueue(speed);
                 p.updatePos(p.x, e.y);
@@ -74,16 +76,29 @@ export default function Pong() {
             let ball = actors.get("ball");
             if (ball !== undefined) {
 
-                if (ball.player === undefined && ball.direction !== null){
-                    console.log(ball.player);
+                if (ball.player === undefined && ball.direction !== null) {
                     const p = ball.direction === true ? "p1" : "p2";
+                    // console.log(playerTurn, ball.direction, p);
                     ball.player = actors.get(p);
                 }
 
-                if (ball.direction === null) 
-                    ball.setNewDirection();                    
-                else 
+                if (ball.direction === null) {
+                    ball.direction = playerTurn === "p1" ? false : true;
+                    ball.setNewDirection();
+                    
+                }else {
                     ball.updatePos()
+
+                    if (ball.isOutOfBounds()) {
+                        const p = ball.direction === true ? "p2" : "p1";
+                        playerTurn = playerTurn === "p1" ? "p2" : "p1";
+                        actors.get(p).points++;
+                        ball.reset();
+                        // console.log(actors.get("p1").points, actors.get("p2").points);
+                    }
+
+
+                }
 
             }
 

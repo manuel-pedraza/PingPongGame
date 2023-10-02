@@ -3,7 +3,7 @@ const { default: Actor } = require("./Actor");
 export default class Ball extends Actor {
     constructor(ctx, x, y) {
         super(ctx, x, y);
-        this.angle = -1;
+        this.angle = undefined;
         this.ballSize = 30;
         this.direction = null;
         this.player = undefined;
@@ -23,6 +23,10 @@ export default class Ball extends Actor {
         this.ctx.fillStyle = '#ff0000';
         this.ctx.fillRect(this.x - (this.ballSize / 2), this.y - (this.ballSize / 2), this.ballSize, this.ballSize);
         this.ctx.fill()
+    }
+
+    isOutOfBounds() {
+        return this.x <= 0 || this.x >= this.ctx.canvas.width;
     }
 
     hasCollidedWithWall(newY) {
@@ -54,7 +58,7 @@ export default class Ball extends Actor {
     }
 
     updatePos() {
-        if (this.angle === -1 || this.direction === null)
+        if (this.angle === undefined || this.direction === null)
             return;
 
         // Rad convertion
@@ -66,8 +70,6 @@ export default class Ball extends Actor {
 
         const newX = this.x + (xDelta * this.speed);
         const newY = this.y + (yDelta * this.speed);
-
-
 
         if (this.hasCollidedWithWall(newY)) {
 
@@ -91,7 +93,7 @@ export default class Ball extends Actor {
 
             const newSpeed = this.player.avgSpeed * 2;
             this.speed = newSpeed > 16 ? 16 : newSpeed < 5.5 ? 5.5 : newSpeed;
-            
+
             this.setNewDirection();
             this.player = undefined;
         } else {
@@ -111,4 +113,13 @@ export default class Ball extends Actor {
         this.setAngle(angleTmp);
 
     }
+
+    reset() {
+        this.x = this.ctx.canvas.width / 2;
+        this.y = this.ctx.canvas.height / 2;
+        this.direction = null;
+        this.angle = undefined;
+        this.player = undefined;
+    }
+
 }

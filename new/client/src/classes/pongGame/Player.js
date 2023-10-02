@@ -6,7 +6,7 @@ export default class Player extends Actor {
     constructor(name, ctx, x, y) {
         super(ctx, x, y);
         this.name = name;
-
+        this.points = 0;
         this.speedQueue = new Queue();
         this.speedQueue.setMaxItems(10);
         this.avgSpeed = this.speedQueue.getAverage();
