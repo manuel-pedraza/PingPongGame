@@ -6,6 +6,8 @@ export default class Ball extends Actor {
         this.angle = -1;
         this.ballSize = 30;
         this.direction = null;
+        this.player = undefined;
+        this.speed = 8;
     }
 
     setAngle(newAngle) {
@@ -36,26 +38,24 @@ export default class Ball extends Actor {
 
         const { x, y, width, height } = this.player;
 
-        
+
         const isLInside = this.direction === true && l >= x - width / 2 && l <= x + width / 2;
         const isRInside = this.direction === false && r >= x - width / 2 && r <= x + width / 2;
         const isTInside = t <= y + height / 2 && t >= y - height / 2;
         const isBInside = b >= y - height / 2 && b <= y + height / 2;
-        
+
         let result = isLInside || isRInside ? isLInside ? "l" : "r" : undefined;
 
         if (result === undefined || !(isTInside || isBInside))
             return undefined;
-        
+
         return result + (isTInside && isBInside ? "tb" : isTInside ? "t" : "b");
-        
+
     }
 
     updatePos() {
         if (this.angle === -1 || this.direction === null)
             return;
-
-        const speed = 8;
 
         // Rad convertion
         // const angleRad = this.angle * (Math.PI / 180 * bXPivot);
@@ -64,8 +64,8 @@ export default class Ball extends Actor {
         const xDelta = Math.cos(angleRad);
         const yDelta = Math.sin(angleRad);
 
-        const newX = this.x + (xDelta * speed);
-        const newY = this.y + (yDelta * speed);
+        const newX = this.x + (xDelta * this.speed);
+        const newY = this.y + (yDelta * this.speed);
 
 
 
@@ -88,13 +88,16 @@ export default class Ball extends Actor {
             const xPivot = this.direction === true ? 1 : -1;
             this.x = (this.player.x + this.player.width / 2 * xPivot) + this.ballSize / 2 * xPivot;
             this.y = newY;
-            // console.warn("HITS WITH PLAYER");
+
+            const newSpeed = this.player.avgSpeed * 2;
+            this.speed = newSpeed > 16 ? 16 : newSpeed < 5.5 ? 5.5 : newSpeed;
+            
+            this.setNewDirection();
+            this.player = undefined;
         } else {
             this.x = newX;
             this.y = newY;
         }
-
-        // console.log(bXPivot);
     }
 
     setNewDirection() {
