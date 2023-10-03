@@ -120,6 +120,7 @@ export default class Ball extends Actor {
         this.direction = null;
         this.angle = undefined;
         this.player = undefined;
+        this.speed = 8;
     }
 
 }

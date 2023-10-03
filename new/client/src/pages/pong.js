@@ -107,6 +107,15 @@ export default function Pong() {
                 a.draw();
             });
 
+            // Draw Points
+            const p1p = actors.get("p1").points;
+            const p2p = actors.get("p2").points;
+
+            context.font = "64px serif";
+            context.fillStyle = "#fff"
+            context.fillText(p1p, canvas.width * 0.4, canvas.height * 0.2);
+            context.fillText(p2p, canvas.width * 0.6, canvas.height * 0.2);
+
             animationFrameId = window.requestAnimationFrame(render);
         }
 
