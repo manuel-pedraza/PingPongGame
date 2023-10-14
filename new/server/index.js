@@ -23,6 +23,7 @@ io.on("connection", (socket) => {
     socket.on("addUser", (userToAdd) => {
 
         let userTaken = false;
+
         for (const user of lstUsers.values()) {
             console.log(user.name);
             if (user.name === userToAdd) {
@@ -31,7 +32,9 @@ io.on("connection", (socket) => {
             }
         }
 
-        if (lstUsers.has(socket.id) || userTaken)
+        console.log(userToAdd);
+
+        if (lstUsers.has(socket.id) || userTaken || userToAdd === "")
             socket.emit("userAlreadyExists");
         else {
             const user = new User({ name: userToAdd });
@@ -59,7 +62,7 @@ io.on("connection", (socket) => {
     });
 
     socket.on("disconnect", (reason) => {
-        
+        console.log(reason);
         
     });
 

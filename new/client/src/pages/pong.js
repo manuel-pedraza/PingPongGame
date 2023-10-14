@@ -1,6 +1,7 @@
 import Actor from '@/classes/pongGame/Actor';
 import Ball from '@/classes/pongGame/Ball';
 import Player from '@/classes/pongGame/Player';
+import { useSocketContext } from '@/contexts/socketContext';
 import React, { useEffect, useRef } from 'react'
 
 export default function Pong() {
@@ -8,6 +9,8 @@ export default function Pong() {
     let canvas = undefined;
 
     let playerTurn = "p1";
+
+    const { socket } = useSocketContext();
 
     const canvasRef = useRef(null);
 
