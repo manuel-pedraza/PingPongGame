@@ -5,8 +5,12 @@ import { socket } from "@/classes/socket";
 
 
 export function SocketProvider({ children }) {
+    let connected = false;
+
     socket.on("connect", () => {
 
+        connected = true;
+        
         if (socket.recovered) {
             // any event missed during the disconnection period will be received now
             console.log("Reconnected to server");
@@ -14,15 +18,21 @@ export function SocketProvider({ children }) {
             console.log("Connected to server");
             // new or unrecoverable session
         }
+        
+    });
+    
+    socket.on("disconnect", () => {
+        connected = false;
+        console.log("DISCONNECTED");
+    });
+    
+    
+    socket.on("message_error", (error) => {
+        connected = false;
 
     });
-
-    socket.on("disconnect", () => {
-        console.log("DISCONNECTED");
-    })
-
     
-    return <SocketContext.Provider value={{ socket }}>
+    return <SocketContext.Provider value={{ socket, connected }}>
         {children}
     </SocketContext.Provider>
 }

@@ -14,6 +14,19 @@ export default function Home() {
   const [roomName, setRoomName] = useState(undefined);
   const [state, setState] = useState("name");
   const { socket } = useSocketContext();
+  const [isConnected, setIsConnected] = useState(undefined);
+
+  function getConnection(){
+    let {connected} = useSocketContext();
+
+    if (connected === isConnected)
+      return isConnected;
+
+    setIsConnected(connected);
+
+    return connected;
+  }
+
 
   function askName() {
     return (
@@ -28,6 +41,15 @@ export default function Home() {
         </button>
       </>
     );
+  }
+
+  function cantConnectToServer(){
+    return (
+      <>
+        <h1 style={{color: "#a00"}}>Can't connect to server</h1>
+      </>
+
+    )
   }
 
   function mainMenu() {
@@ -70,6 +92,13 @@ export default function Home() {
   }
 
   function getActualState() {
+    const connection = getConnection();
+    console.log(connection);
+
+    if(!connection)
+      return cantConnectToServer();
+
+    console.log(state);
     switch (state) {
       case "name":
         return askName();
@@ -103,6 +132,7 @@ export default function Home() {
     function EDisconnect(){
       setState("name")
     }
+
 
     socket.on("userAlreadyExists", EUserAlreadyExists);
     socket.on("userCreated", EUserCreated);

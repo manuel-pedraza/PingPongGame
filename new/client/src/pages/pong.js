@@ -17,7 +17,7 @@ export default function Pong() {
     const drawBg = () => {
         context.fillStyle = '#000000';
         context.fillRect(0, 0, canvas.width, canvas.height);
-        context.fill()
+        context.fill();
 
     }
 
