@@ -17,34 +17,6 @@ export default function Home() {
   const [roomName, setRoomName] = useState(undefined);
   const [state, setState] = useState("name");
 
-
-  socket.on("disconnect", () => {
-    setIsConnected(false);
-
-    console.log("DISCONNECTED");
-  });
-
-
-  socket.on("message_error", (error) => {
-    setIsConnected(false);
-
-    console.log(error);
-  });
-
-  socket.on("connect", () => {
-
-
-    if (socket.recovered) {
-      // any event missed during the disconnection period will be received now
-      console.log("Reconnected to server");
-    } else {
-      console.log("Connected to server");
-      // new or unrecoverable session
-    }
-    setIsConnected(true);
-
-  });
-
   function askName() {
     return (
       <div>
@@ -139,8 +111,9 @@ export default function Home() {
 
   useEffect(() => {
 
-    function EUserAlreadyExists() {
-      alert("User was already taken")
+    function EErrorAddingUser(args) {
+      
+      alert(args);
     }
 
     function EUserCreated() {
@@ -153,22 +126,44 @@ export default function Home() {
       setState("Await Room");
     }
 
+    function EConnected() {
+      if (socket.recovered) {
+        // any event missed during the disconnection period will be received now
+        console.log("Reconnected to server");
+      } else {
+        console.log("Connected to server");
+        // new or unrecoverable session
+      }
+      setIsConnected(true);
+    }
+
     function EDisconnect() {
+      setIsConnected(false);
       setState("name")
+    }
+    
+    function EMsgError() {
+      setIsConnected(false);
+
+      console.log(error);
     }
 
 
-    socket.on("userAlreadyExists", EUserAlreadyExists);
+    socket.on("errorAddingUser", EErrorAddingUser);
     socket.on("userCreated", EUserCreated);
     socket.on("roomCreated", ERoomCreated);
     socket.on("disconnect", EDisconnect)
+    socket.on("connected", EConnected);
+    socket.on("message_error", EMsgError);
 
 
     return () => {
-      socket.off("userAlreadyExists", EUserAlreadyExists);
+      socket.off("errorAddingUser", EErrorAddingUser);
       socket.off("userCreated", EUserCreated);
       socket.off("roomCreated", ERoomCreated);
       socket.off("disconnect", EDisconnect);
+      socket.off("connected", EConnected);
+      socket.off("message_error", EMsgError);
     }
 
 

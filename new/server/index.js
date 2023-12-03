@@ -25,7 +25,7 @@ io.on("connection", (socket) => {
         let userTaken = false;
 
         for (const user of lstUsers.values()) {
-            console.log(user.name);
+            // console.log(user.name);
             if (user.name === userToAdd) {
                 userTaken = true;
                 break;
@@ -34,8 +34,11 @@ io.on("connection", (socket) => {
 
         console.log(userToAdd);
 
-        if (lstUsers.has(socket.id) || userTaken || userToAdd === "")
-            socket.emit("userAlreadyExists");
+        const userAlreadyExists = lstUsers.has(socket.id) || userTaken;
+        const userNotValid = userToAdd === "" || userToAdd === null;
+
+        if (userAlreadyExists || userNotValid)
+            socket.emit("errorAddingUser", userAlreadyExists ? "User already taken" : "User is not valid");
         else {
             const user = new User({ name: userToAdd });
             lstUsers.set(socket.id, user);

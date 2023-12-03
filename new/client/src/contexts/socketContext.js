@@ -39,8 +39,8 @@ export function SocketProvider({ children }) {
         console.log("CONTEXT: ", connected);
     });
 
-
-    return <SocketContext.Provider value={{  }}>
+    // value = {{ socket, connected, tryToConnect }}
+    return <SocketContext.Provider value={{}}>
         {children}
     </SocketContext.Provider>
 }
@@ -50,7 +50,7 @@ export function useSocketContext() {
     if (context === undefined) {
         throw new Error("useSocketContext must be used within an I18NProvider")
     }
-    socket.connect();
+    // socket.connect();
 
     return context;
 }
