@@ -16,6 +16,7 @@ export default function Home() {
   const [userName, setUserName] = useState(undefined);
   const [roomName, setRoomName] = useState(undefined);
   const [state, setState] = useState("name");
+  const [rommList, setRoomList] = useState([]);
 
   function askName() {
     return (
@@ -49,6 +50,7 @@ export default function Home() {
           Create Room
         </button>
         <button onClick={(e) => {
+          socket.emit("requestRoomList");
           setState("roomListMenu");
         }}>
           See Room List
@@ -75,7 +77,18 @@ export default function Home() {
 
   function roomListMenu() {
     return (
-      <>Hello there</>
+      <>
+        <h1>Room List</h1>
+        <ul className='room-list'>
+          {rommList.map((r, index) => {
+            console.log("I:", typeof index, (index % 2));
+            return (
+            <li key={`room-${r.name}`} className={`room-list-element${index % 2 === 1 ? " odd" : ""}`}>
+              {`Name: ${r.name} | Host: ${r.host}`}
+            </li>)
+          })}
+        </ul>
+      </>
     )
   }
 
@@ -112,7 +125,7 @@ export default function Home() {
   useEffect(() => {
 
     function EErrorAddingUser(args) {
-      
+
       alert(args);
     }
 
@@ -121,8 +134,8 @@ export default function Home() {
       setState("mainMenu");
     }
 
-    function ERoomCreated() {
-      alert(`Room ${roomName} created`);
+    function ERoomCreated(lobby) {
+      alert(`Room ${lobby.name} created`);
       setState("Await Room");
     }
 
@@ -141,17 +154,22 @@ export default function Home() {
       setIsConnected(false);
       setState("name")
     }
-    
+
     function EMsgError() {
       setIsConnected(false);
 
       console.log(error);
     }
 
+    function EGetRoomList(list) {
+      setRoomList(list);
+    }
+
 
     socket.on("errorAddingUser", EErrorAddingUser);
     socket.on("userCreated", EUserCreated);
     socket.on("roomCreated", ERoomCreated);
+    socket.on("requestRoomList", EGetRoomList);
     socket.on("disconnect", EDisconnect)
     socket.on("connected", EConnected);
     socket.on("message_error", EMsgError);
@@ -161,6 +179,7 @@ export default function Home() {
       socket.off("errorAddingUser", EErrorAddingUser);
       socket.off("userCreated", EUserCreated);
       socket.off("roomCreated", ERoomCreated);
+      socket.off("requestRoomList", EGetRoomList);
       socket.off("disconnect", EDisconnect);
       socket.off("connected", EConnected);
       socket.off("message_error", EMsgError);

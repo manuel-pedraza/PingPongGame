@@ -36,7 +36,6 @@ export function SocketProvider({ children }) {
 
         connected = true;
 
-        console.log("CONTEXT: ", connected);
     });
 
     // value = {{ socket, connected, tryToConnect }}

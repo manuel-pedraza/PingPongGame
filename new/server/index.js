@@ -70,6 +70,8 @@ io.on("connection", (socket) => {
     });
 
     socket.on("createRoom", (room, name) => {
+        // TODO: Add validations
+
         const resLobby = new Lobby({ name: room, host: name });
         lstLobbies.push(resLobby);
         console.log(lstLobbies);
@@ -79,7 +81,7 @@ io.on("connection", (socket) => {
         socket.emit("roomCreated", resLobby);
     });
 
-    socket.on("requestRoomList", async () => {
+    socket.on("requestRoomList", () => {
         /*const lstSocketsId = (await io.fetchSockets()).map(s => s.id);
         let lstRoomsToTreat = new Map(io.sockets.adapter.rooms);
 
