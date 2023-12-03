@@ -7,30 +7,47 @@ import { useEffect, useState } from 'react';
 // var socket = undefined;
 
 const inter = Inter({ subsets: ['latin'] })
+import { socket } from "@/classes/socket";
 
 export default function Home() {
+  socket.connect();
 
+  const [isConnected, setIsConnected] = useState(true);
   const [userName, setUserName] = useState(undefined);
   const [roomName, setRoomName] = useState(undefined);
   const [state, setState] = useState("name");
-  const { socket } = useSocketContext();
-  const [isConnected, setIsConnected] = useState(undefined);
 
-  function getConnection(){
-    let {connected} = useSocketContext();
 
-    if (connected === isConnected)
-      return isConnected;
+  socket.on("disconnect", () => {
+    setIsConnected(false);
 
-    setIsConnected(connected);
+    console.log("DISCONNECTED");
+  });
 
-    return connected;
-  }
 
+  socket.on("message_error", (error) => {
+    setIsConnected(false);
+
+    console.log(error);
+  });
+
+  socket.on("connect", () => {
+
+
+    if (socket.recovered) {
+      // any event missed during the disconnection period will be received now
+      console.log("Reconnected to server");
+    } else {
+      console.log("Connected to server");
+      // new or unrecoverable session
+    }
+    setIsConnected(true);
+
+  });
 
   function askName() {
     return (
-      <>
+      <div>
         <input type='text' onChange={(e) => {
           setUserName(e.target.value ? e.target.value : "")
         }} />
@@ -39,16 +56,15 @@ export default function Home() {
         }}>
           Send Name
         </button>
-      </>
+      </div>
     );
   }
 
-  function cantConnectToServer(){
+  function cantConnectToServer() {
     return (
       <>
-        <h1 style={{color: "#a00"}}>Can't connect to server</h1>
+        <h1 style={{ color: "#a00" }}>Can't connect to server</h1>
       </>
-
     )
   }
 
@@ -92,13 +108,8 @@ export default function Home() {
   }
 
   function getActualState() {
-    const connection = getConnection();
-    console.log(connection);
-
-    if(!connection)
-      return cantConnectToServer();
-
-    console.log(state);
+    // const connection = tryToConnect();
+    console.log("STATE: ", state);
     switch (state) {
       case "name":
         return askName();
@@ -108,10 +119,23 @@ export default function Home() {
         return askRoomName();
       case "roomListMenu":
         return roomListMenu();
+      case "cantConnectToServer":
+        return cantConnectToServer();
       default:
+
         return (<></>);
     }
   }
+
+  useEffect(() => {
+
+    if (isConnected !== true)
+      setState("cantConnectToServer");
+    else
+      setState("name");
+
+    console.log(isConnected);
+  }, [isConnected]);
 
   useEffect(() => {
 
@@ -124,12 +148,12 @@ export default function Home() {
       setState("mainMenu");
     }
 
-    function ERoomCreated(){
+    function ERoomCreated() {
       alert(`Room ${roomName} created`);
       setState("Await Room");
     }
 
-    function EDisconnect(){
+    function EDisconnect() {
       setState("name")
     }
 
@@ -138,14 +162,15 @@ export default function Home() {
     socket.on("userCreated", EUserCreated);
     socket.on("roomCreated", ERoomCreated);
     socket.on("disconnect", EDisconnect)
-    
-    
+
+
     return () => {
       socket.off("userAlreadyExists", EUserAlreadyExists);
       socket.off("userCreated", EUserCreated);
       socket.off("roomCreated", ERoomCreated);
       socket.off("disconnect", EDisconnect);
     }
+
 
   }, [socket]);
 
@@ -154,8 +179,10 @@ export default function Home() {
       <Head>
       </Head>
       <main>
-        <h1 >Hello there</h1>
-        {getActualState()}
+        <div>
+          <h1 >Hello there</h1>
+          {getActualState()}
+        </div>
       </main>
     </>
   )

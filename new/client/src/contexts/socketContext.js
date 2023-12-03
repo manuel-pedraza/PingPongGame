@@ -2,15 +2,30 @@ import { createContext, useContext } from "react"
 
 const SocketContext = createContext();
 import { socket } from "@/classes/socket";
+let connected = undefined;
 
 
 export function SocketProvider({ children }) {
-    let connected = false;
+
+    function tryToConnect(){
+        return connected;
+    }
+
+    socket.on("disconnect", () => {
+        connected = false;
+        console.log("DISCONNECTED");
+    });
+
+
+    socket.on("message_error", (error) => {
+        console.log("ERROR_MSG");
+        connected = false;
+
+    });
 
     socket.on("connect", () => {
 
-        connected = true;
-        
+
         if (socket.recovered) {
             // any event missed during the disconnection period will be received now
             console.log("Reconnected to server");
@@ -18,21 +33,14 @@ export function SocketProvider({ children }) {
             console.log("Connected to server");
             // new or unrecoverable session
         }
-        
-    });
-    
-    socket.on("disconnect", () => {
-        connected = false;
-        console.log("DISCONNECTED");
-    });
-    
-    
-    socket.on("message_error", (error) => {
-        connected = false;
 
+        connected = true;
+
+        console.log("CONTEXT: ", connected);
     });
-    
-    return <SocketContext.Provider value={{ socket, connected }}>
+
+
+    return <SocketContext.Provider value={{  }}>
         {children}
     </SocketContext.Provider>
 }
