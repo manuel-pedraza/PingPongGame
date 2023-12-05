@@ -1,9 +1,9 @@
 class Lobby {
 
     constructor({
-        name = "",
-        host = "",
-        opponent = ""
+        name = undefined,
+        host = undefined,
+        opponent = undefined
     } = {}) {
         this.name = name;
         this.host = host;

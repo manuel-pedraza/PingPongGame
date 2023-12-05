@@ -1,7 +1,12 @@
 const { Server } = require("socket.io");
 
+const crypto = require("node:crypto");
+const randomId = () => crypto.randomBytes(8).toString("hex");
 const User = require("./classes/User.js");
 const Lobby = require("./classes/Lobby.js");
+const { InMemorySessionStore } = require("./classes/sessionStore.js");
+const sessionStore = new InMemorySessionStore();
+
 const io = new Server( {cors: {
     origin: "http://localhost:3000",
     methods: ["GET", "POST"],
@@ -13,9 +18,53 @@ let lstUsers = new Map();
 let lstLobbies = [];
 // const io = new Server(3000, {options});
 
+io.use((socket, next) => {
+
+    const sessionID = socket.handshake.auth.sessionID;
+
+    if(sessionID){
+        // find existing session
+        const session = sessionStore.findSession(sessionID);
+        if(session){
+            socket.sessionID = sessionID;
+            socket.userID = session.userID;
+            socket.username = session.username;
+            return next();
+        }
+    }
+
+    // Create new session
+
+    // const username = socket.handshake.auth.username;
+
+    // if(!username){
+    //     return next(new Error("Invalid Username"));
+    // }
+
+    // socket.username = username;
+
+    socket.sessionID = randomId();
+    socket.userID = randomId();
+
+    next();
+
+});
+
 io.on("connection", (socket) => {
 
     console.log("Socket connected " + socket.id);
+
+    sessionStore.saveSession(socket.sessionID, {
+        userID: socket.userID,
+        username: socket.username,
+        connected: true,
+    });
+    socket.emit("session", {
+        sessionID: socket.sessionID,
+        userID: socket.userID,
+        username: socket.username
+    });
+
     socket.on("disconnect", () => {
         console.log("Socket disconnected ", socket.id);
     });
@@ -34,12 +83,13 @@ io.on("connection", (socket) => {
 
         console.log(userToAdd);
 
-        const userAlreadyExists = lstUsers.has(socket.id) || userTaken;
+        // const userAlreadyExists = lstUsers.has(socket.id) || userTaken;
         const userNotValid = userToAdd === "" || userToAdd === null;
 
-        if (userAlreadyExists || userNotValid)
+        if (userTaken || userNotValid)
             socket.emit("errorAddingUser", userAlreadyExists ? "User already taken" : "User is not valid");
         else {
+            socket.username = userToAdd;
             const user = new User({ name: userToAdd });
             lstUsers.set(socket.id, user);
             socket.emit("userCreated");
@@ -64,13 +114,29 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("disconnect", (reason) => {
+    socket.on("disconnect", async (reason) => {
+        const matchingSockets = await io.in(socket.userID).allSockets();
+        const isDisconnected = matchingSockets.size === 0;
+
+        if (isDisconnected) {
+            // notify other users
+            // socket.broadcast.emit("user disconnected", socket.userID);
+            // update the connection status of the session
+            sessionStore.saveSession(socket.sessionID, {
+                userID: socket.userID,
+                username: socket.username,
+                connected: false,
+            });
+        }
+
         console.log(reason);
         
     });
 
     socket.on("createRoom", (room, name) => {
-        // TODO: Add validations
+        // TODO: 
+        //  - Add validations
+        //  - Make broadcast for those looking the room list
 
         const resLobby = new Lobby({ name: room, host: name });
         lstLobbies.push(resLobby);
@@ -108,16 +174,17 @@ io.on("connection", (socket) => {
     });
 
     socket.on("requestJoinRoomByRList", (room, name) => {
-        const clients = io.sockets.adapter.rooms.get(room);
+        // const clients = io.sockets.adapter.rooms.get(room);
 
-        if (clients === undefined) {
-            socket.emit("invalidRoomName")
+        let lobby = lstLobbies.find(r => r.name === room);
+
+        if (lobby === undefined || lobby.opponent !== undefined) {
+            socket.emit("errorJoiningRoom", lobby === undefined ? "Invalid room name" : "The room is full");
         }
-        else if (clients.size >= 2)
-            socket.emit("roomIsFull");
         else {
+            lobby.opponent = name;
             const index = lstLobbies.findIndex(l => l.name === room);
-            lstLobbies[index].opponent = name;
+            lstLobbies[index] = lobby;
 
             console.log(lstLobbies);
 

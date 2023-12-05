@@ -8,6 +8,7 @@ export default class Ball extends Actor {
         this.direction = null;
         this.player = undefined;
         this.speed = 8;
+        this.color = 0;
     }
 
     setAngle(newAngle) {
@@ -20,7 +21,9 @@ export default class Ball extends Actor {
     }
 
     draw() {
-        this.ctx.fillStyle = '#ff0000';
+
+        // '#ff0000'
+        this.ctx.fillStyle = `hsl(${this.color}, 100%, 50%)`;
         this.ctx.fillRect(this.x - (this.ballSize / 2), this.y - (this.ballSize / 2), this.ballSize, this.ballSize);
         this.ctx.fill()
     }

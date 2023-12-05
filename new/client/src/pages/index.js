@@ -11,8 +11,9 @@ import { socket } from "@/classes/socket";
 
 export default function Home() {
   socket.connect();
+  
 
-  const [isConnected, setIsConnected] = useState(true);
+  const [isConnected, setIsConnected] = useState(undefined);
   const [userName, setUserName] = useState(undefined);
   const [roomName, setRoomName] = useState(undefined);
   const [state, setState] = useState("name");
@@ -25,7 +26,14 @@ export default function Home() {
           setUserName(e.target.value ? e.target.value : "")
         }} />
         <button onClick={(e) => {
-          socket.emit("addUser", userName);
+          try {
+            // socket.auth = { username: userName};
+
+            socket.emit("addUser", userName);
+          } catch (error) {
+            
+          }
+
         }}>
           Send Name
         </button>
@@ -66,7 +74,7 @@ export default function Home() {
           setRoomName(e.target.value ? e.target.value : "")
         }} />
         <button onClick={(e) => {
-
+          
           socket.emit("createRoom", roomName, userName);
         }}>
           Send Room Name
@@ -83,7 +91,12 @@ export default function Home() {
           {rommList.map((r, index) => {
             console.log("I:", typeof index, (index % 2));
             return (
-            <li key={`room-${r.name}`} className={`room-list-element${index % 2 === 1 ? " odd" : ""}`}>
+            <li key={`room-${r.name}`} className={`room-list-element${index % 2 === 1 ? " odd" : ""}`}
+              onClick={() => {
+                socket.emit("requestJoinRoomByRList", r.name, userName);
+              }}
+              
+            >
               {`Name: ${r.name} | Host: ${r.host}`}
             </li>)
           })}
@@ -114,18 +127,19 @@ export default function Home() {
 
   useEffect(() => {
 
-    if (isConnected !== true)
+    if (isConnected === false)
       setState("cantConnectToServer");
-    else
-      setState("name");
 
     console.log(isConnected);
-  }, [isConnected]);
+  }, [isConnected, state]);
 
   useEffect(() => {
 
     function EErrorAddingUser(args) {
+      alert(args);
+    }
 
+    function EErrorJoiningRoom(args) {
       alert(args);
     }
 
@@ -147,7 +161,17 @@ export default function Home() {
         console.log("Connected to server");
         // new or unrecoverable session
       }
+
+      setState("name");
       setIsConnected(true);
+    }
+
+    function ESession({sessionID, userID, username}){
+
+      socket.auth = { sessionID };
+      localStorage.setItem("sessionID", sessionID);
+      socket.userID = userID;
+      console.log("US", username);
     }
 
     function EDisconnect() {
@@ -170,16 +194,20 @@ export default function Home() {
     socket.on("userCreated", EUserCreated);
     socket.on("roomCreated", ERoomCreated);
     socket.on("requestRoomList", EGetRoomList);
+    socket.on("errorJoiningRoom", EErrorJoiningRoom);
+    socket.on("session", ESession);
     socket.on("disconnect", EDisconnect)
     socket.on("connected", EConnected);
     socket.on("message_error", EMsgError);
-
-
+    
+    
     return () => {
       socket.off("errorAddingUser", EErrorAddingUser);
+      socket.off("session", ESession);
       socket.off("userCreated", EUserCreated);
       socket.off("roomCreated", ERoomCreated);
       socket.off("requestRoomList", EGetRoomList);
+      socket.off("errorJoiningRoom", EErrorJoiningRoom);
       socket.off("disconnect", EDisconnect);
       socket.off("connected", EConnected);
       socket.off("message_error", EMsgError);

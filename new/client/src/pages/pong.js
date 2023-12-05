@@ -68,6 +68,8 @@ export default function Pong() {
 
         }
 
+        let ballColor = 0;
+
         function render() {
             // console.log(e.elapsedTime);
             context.clearRect(0, 0, canvas.width, canvas.height);
@@ -90,7 +92,10 @@ export default function Pong() {
                     ball.setNewDirection();
                     
                 }else {
-                    ball.updatePos()
+                    ball.updatePos();
+
+                    // RGB
+                    // ball.color = ball.color >= 360 ? 0 : ball.color + 1;
 
                     if (ball.isOutOfBounds()) {
                         const p = ball.direction === true ? "p2" : "p1";
