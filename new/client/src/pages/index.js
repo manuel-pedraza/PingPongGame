@@ -10,8 +10,6 @@ const inter = Inter({ subsets: ['latin'] })
 import { socket } from "@/classes/socket";
 
 export default function Home() {
-  socket.connect();
-  
 
   const [isConnected, setIsConnected] = useState(undefined);
   const [userName, setUserName] = useState(undefined);
@@ -31,7 +29,7 @@ export default function Home() {
 
             socket.emit("addUser", userName);
           } catch (error) {
-            
+
           }
 
         }}>
@@ -74,7 +72,7 @@ export default function Home() {
           setRoomName(e.target.value ? e.target.value : "")
         }} />
         <button onClick={(e) => {
-          
+
           socket.emit("createRoom", roomName, userName);
         }}>
           Send Room Name
@@ -91,14 +89,14 @@ export default function Home() {
           {rommList.map((r, index) => {
             console.log("I:", typeof index, (index % 2));
             return (
-            <li key={`room-${r.name}`} className={`room-list-element${index % 2 === 1 ? " odd" : ""}`}
-              onClick={() => {
-                socket.emit("requestJoinRoomByRList", r.name, userName);
-              }}
-              
-            >
-              {`Name: ${r.name} | Host: ${r.host}`}
-            </li>)
+              <li key={`room-${r.name}`} className={`room-list-element${index % 2 === 1 ? " odd" : ""}`}
+                onClick={() => {
+                  socket.emit("requestJoinRoomByRList", r.name, userName);
+                }}
+
+              >
+                {`Name: ${r.name} | Host: ${r.host}`}
+              </li>)
           })}
         </ul>
       </>
@@ -126,14 +124,22 @@ export default function Home() {
   }
 
   useEffect(() => {
-
     if (isConnected === false)
       setState("cantConnectToServer");
 
     console.log(isConnected);
-  }, [isConnected, state]);
+  }, [isConnected]);
 
   useEffect(() => {
+    const sessionID = localStorage.getItem("sessionID");
+
+    if (sessionID) {
+      socket.auth = { sessionID };
+    }
+
+    socket.connect();
+    // console.log(socket);
+
 
     function EErrorAddingUser(args) {
       alert(args);
@@ -163,24 +169,33 @@ export default function Home() {
       }
 
       setState("name");
-      setIsConnected(true);
+      setIsConnected(socket.connected);
     }
 
-    function ESession({sessionID, userID, username}){
+    function ESession(e) {
 
+      const { sessionID, userID, username } = e;
+      // console.log(e);
       socket.auth = { sessionID };
       localStorage.setItem("sessionID", sessionID);
       socket.userID = userID;
-      console.log("US", username);
+
+      if (username) {
+        socket.username = username;
+        setUserName(username);
+        setState("mainMenu")
+      } else
+        setState("name");
+
     }
 
     function EDisconnect() {
-      setIsConnected(false);
+      setIsConnected(socket.connected);
       setState("name")
     }
 
     function EMsgError() {
-      setIsConnected(false);
+      setIsConnected(socket.connected);
 
       console.log(error);
     }
@@ -199,8 +214,8 @@ export default function Home() {
     socket.on("disconnect", EDisconnect)
     socket.on("connected", EConnected);
     socket.on("message_error", EMsgError);
-    
-    
+
+
     return () => {
       socket.off("errorAddingUser", EErrorAddingUser);
       socket.off("session", ESession);
@@ -223,6 +238,7 @@ export default function Home() {
       <main>
         <div>
           <h1 >Hello there</h1>
+          <h2>{userName}</h2>
           {getActualState()}
         </div>
       </main>
