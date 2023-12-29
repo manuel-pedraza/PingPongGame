@@ -20,7 +20,6 @@ let lstUsers = new Map();
 let lstLobbies = [];
 // const io = new Server(3000, {options});
 
-
 io.use((socket, next) => {
 
     const sessionID = socket.handshake.auth.sessionID;
@@ -29,6 +28,7 @@ io.use((socket, next) => {
     if (sessionID) {
         // find existing session
         const session = sessionStore.findSession(sessionID);
+        //  && session.connected === true
         if (session) {
 
             console.log("SESSION: ", session);
@@ -58,14 +58,14 @@ io.use((socket, next) => {
 
 io.on("connection", (socket) => {
 
-    console.log("SC (id, session): ", socket.id, socket.sessionID );
+    console.log("SC (id, session): ", socket.id, socket.sessionID);
 
     sessionStore.saveSession(socket.sessionID, {
         userID: socket.userID,
         username: socket.username,
         connected: true,
     });
-    
+
     socket.emit("session", {
         sessionID: socket.sessionID,
         userID: socket.userID,
@@ -73,7 +73,52 @@ io.on("connection", (socket) => {
     });
 
     socket.join(socket.userID);
-    
+
+
+
+    socket.on("addUser", (userToAdd) => {
+
+        const userNotValid = userToAdd === "" || userToAdd === null;
+        if (userNotValid){
+            socket.emit("errorAddingUser", "User is not valid");
+            return;
+        }
+
+        for (const user of sessionStore.sessions.values()) {
+            // console.log(user.name);
+            if (user.username === userToAdd) {
+
+
+                if (user.connected === true) {
+                    socket.emit("errorAddingUser", "User already taken");
+                    return
+                }
+                else {
+                    user.username = undefined;
+                }
+
+                break;
+            }
+        }
+
+        console.log(userToAdd);
+
+
+        socket.username = userToAdd;
+        sessionStore.saveSession(socket.sessionID, {
+            userID: socket.userID,
+            username: userToAdd,
+            connected: true,
+        });
+
+        console.log("SES", sessionStore.findAllSessions());
+
+        const user = new User({ name: userToAdd });
+        // lstUsers.set(socket.sessionID, user);
+        socket.emit("userCreated");
+
+    });
+
     socket.on("disconnect", async () => {
 
         const matchingSockets = await io.in(socket.userID).fetchSockets();
@@ -88,83 +133,17 @@ io.on("connection", (socket) => {
                 connected: false,
             });
 
-            if (lstUsers.has(socket.id)) {
-                const name = lstUsers.get(socket.id).name;
+            const index = lstLobbies.findIndex(l => l.host === socket.username || l.opponent === socket.username);
 
-                console.log(lstUsers.get(socket.id).name + " was removed");
-                lstUsers.delete(socket.id);
+            if (index > -1)
+                lstLobbies.splice(index, 1);
 
-                const index = lstLobbies.findIndex(l => l.host === name || l.opponent === name);
-
-                if (index > -1)
-                    lstLobbies.splice(index, 1);
-
-
-            }
         }
 
         console.log("Socket disconnected ", socket.id);
     });
 
-    socket.on("addUser", (userToAdd) => {
-
-        let userTaken = false;
-
-        for (const user of lstUsers.values()) {
-            // console.log(user.name);
-            if (user.name === userToAdd) {
-                userTaken = true;
-                break;
-            }
-        }
-
-        console.log(userToAdd);
-
-        // const userAlreadyExists = lstUsers.has(socket.id) || userTaken;
-        const userNotValid = userToAdd === "" || userToAdd === null;
-
-        if (userTaken || userNotValid)
-            socket.emit("errorAddingUser", userTaken ? "User already taken" : "User is not valid");
-        // socket.emit("errorAddingUser", userAlreadyExists ? "User already taken" : "User is not valid");
-        else {
-
-            socket.username = userToAdd;
-            sessionStore.saveSession(socket.sessionID, {
-                userID: socket.userID,
-                username: userToAdd,
-                connected: true,
-            });
-
-            console.log("SES", sessionStore.findAllSessions());
-
-            const user = new User({ name: userToAdd });
-            lstUsers.set(socket.id, user);
-            socket.emit("userCreated");
-
-        }
-    });
-
     socket.on("disconnecting", async (reason) => {
-
-
-    });
-
-    socket.on("disconnect", async (reason) => {
-        const matchingSockets = await io.in(socket.userID).allSockets();
-        const isDisconnected = matchingSockets.size === 0;
-
-        if (isDisconnected) {
-            // notify other users
-            // socket.broadcast.emit("user disconnected", socket.userID);
-            // update the connection status of the session
-            sessionStore.saveSession(socket.sessionID, {
-                userID: socket.userID,
-                username: socket.username,
-                connected: false,
-            });
-        }
-
-        console.log(reason);
 
     });
 

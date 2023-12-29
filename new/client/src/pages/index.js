@@ -180,6 +180,7 @@ export default function Home() {
       localStorage.setItem("sessionID", sessionID);
       socket.userID = userID;
 
+      console.log("US", username);
       if (username) {
         socket.username = username;
         setUserName(username);
@@ -238,7 +239,13 @@ export default function Home() {
       <main>
         <div>
           <h1 >Hello there</h1>
-          <h2>{userName}</h2>
+          {
+            !(state === "name" || state === "cantConnectToServer") && userName !== undefined ?
+            <h2>{userName}</h2>
+            :
+            <></>
+          }
+
           {getActualState()}
         </div>
       </main>
