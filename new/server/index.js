@@ -122,7 +122,8 @@ io.on("connection", (socket) => {
     socket.on("disconnect", async () => {
 
         const matchingSockets = await io.in(socket.userID).fetchSockets();
-        const isDisconnected = matchingSockets.size === 0;
+        const isDisconnected = matchingSockets.length === 0 || matchingSockets.size === 0;
+        console.log(isDisconnected, matchingSockets);
         if (isDisconnected) {
             // notify other users
             // socket.broadcast.emit("user disconnected", socket.userID);
@@ -132,6 +133,8 @@ io.on("connection", (socket) => {
                 username: socket.username,
                 connected: false,
             });
+
+            console.log(sessionStore.sessions);
 
             const index = lstLobbies.findIndex(l => l.host === socket.username || l.opponent === socket.username);
 
