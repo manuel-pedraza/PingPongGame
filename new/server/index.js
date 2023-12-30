@@ -16,7 +16,6 @@ const io = new Server({
     }
 });
 
-let lstUsers = new Map();
 let lstLobbies = [];
 // const io = new Server(3000, {options});
 
@@ -114,7 +113,6 @@ io.on("connection", (socket) => {
         console.log("SES", sessionStore.findAllSessions());
 
         const user = new User({ name: userToAdd });
-        // lstUsers.set(socket.sessionID, user);
         socket.emit("userCreated");
 
     });
@@ -200,14 +198,16 @@ io.on("connection", (socket) => {
         }
         else {
             lobby.opponent = name;
-            const index = lstLobbies.findIndex(l => l.name === room);
+
+            const index = lstLobbies.findIndex (l => l.name === room);
             lstLobbies[index] = lobby;
 
             console.log(lstLobbies);
 
             socket.join(room);
-            io.to(room).emit("opponentJoined", lstLobbies[index]);
-            socket.emit("joinedRoomFromList", lstLobbies[index]);
+            io.to(room).emit("opponentJoined", lobby);
+            socket.emit("joinedRoomFromList", lobby);
+            
         }
 
 

@@ -13,7 +13,9 @@ export default function Home() {
 
   const [isConnected, setIsConnected] = useState(undefined);
   const [userName, setUserName] = useState(undefined);
+  const [opponent, setOpponent] = useState(undefined);
   const [roomName, setRoomName] = useState(undefined);
+  const [isHost, setIsHost] = useState(false);
   const [state, setState] = useState("name");
   const [rommList, setRoomList] = useState([]);
 
@@ -103,6 +105,22 @@ export default function Home() {
     )
   }
 
+  function roomLobby() {
+    return (<>
+      <h1>{`Lobby: ${roomName}`}</h1>
+      <h2 style={{ color: "#f00" }}>{isHost === true ? userName : opponent}</h2>
+      <h2>{isHost === false ? userName : opponent}</h2>
+      <button
+        onClick={(e) => {
+
+          if (opponent !== undefined)
+            alert("game started");
+          // socket.emit("")
+        }}
+      >Start game</button>
+    </>)
+  }
+
   function getActualState() {
     // const connection = tryToConnect();
     console.log("STATE: ", state);
@@ -117,6 +135,8 @@ export default function Home() {
         return roomListMenu();
       case "cantConnectToServer":
         return cantConnectToServer();
+      case "awaitRoom":
+        return roomLobby();
       default:
 
         return (<></>);
@@ -149,6 +169,17 @@ export default function Home() {
       alert(args);
     }
 
+    function EJoinedRoomByList(args) {
+      setIsHost(false);
+      setRoomName(args.name);
+      setOpponent(args.host);
+      setState("awaitRoom");
+    }
+
+    function EOpponentJoined(args) {
+      setOpponent(args.opponent);
+    }
+
     function EUserCreated() {
       alert("User created")
       setState("mainMenu");
@@ -156,7 +187,8 @@ export default function Home() {
 
     function ERoomCreated(lobby) {
       alert(`Room ${lobby.name} created`);
-      setState("Await Room");
+      setIsHost(true);
+      setState("awaitRoom");
     }
 
     function EConnected() {
@@ -211,6 +243,8 @@ export default function Home() {
     socket.on("roomCreated", ERoomCreated);
     socket.on("requestRoomList", EGetRoomList);
     socket.on("errorJoiningRoom", EErrorJoiningRoom);
+    socket.on("joinedRoomFromList", EJoinedRoomByList);
+    socket.on("opponentJoined", EOpponentJoined);
     socket.on("session", ESession);
     socket.on("disconnect", EDisconnect)
     socket.on("connected", EConnected);
@@ -224,6 +258,8 @@ export default function Home() {
       socket.off("roomCreated", ERoomCreated);
       socket.off("requestRoomList", EGetRoomList);
       socket.off("errorJoiningRoom", EErrorJoiningRoom);
+      socket.off("joinedRoomFromList", EJoinedRoomByList);
+      socket.off("opponentJoined", EOpponentJoined);
       socket.off("disconnect", EDisconnect);
       socket.off("connected", EConnected);
       socket.off("message_error", EMsgError);
@@ -241,9 +277,9 @@ export default function Home() {
           <h1 >Hello there</h1>
           {
             !(state === "name" || state === "cantConnectToServer") && userName !== undefined ?
-            <h2>{userName}</h2>
-            :
-            <></>
+              <h2>{userName}</h2>
+              :
+              <></>
           }
 
           {getActualState()}
