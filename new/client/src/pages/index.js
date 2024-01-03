@@ -8,9 +8,13 @@ import { useEffect, useState } from 'react';
 
 const inter = Inter({ subsets: ['latin'] })
 import { socket } from "@/classes/socket";
+import { useRouter } from 'next/router'; 
+
 
 export default function Home() {
 
+  const router = useRouter()
+  
   const [isConnected, setIsConnected] = useState(undefined);
   const [userName, setUserName] = useState(undefined);
   const [opponent, setOpponent] = useState(undefined);
@@ -110,14 +114,31 @@ export default function Home() {
       <h1>{`Lobby: ${roomName}`}</h1>
       <h2 style={{ color: "#f00" }}>{isHost === true ? userName : opponent}</h2>
       <h2>{isHost === false ? userName : opponent}</h2>
-      <button
-        onClick={(e) => {
 
-          if (opponent !== undefined)
+      {isHost === true && opponent !== undefined ?
+        <button
+          onClick={(e) => {
+
+            let lobby = {
+              isHost: isHost,
+              lobbyName: roomName,
+              host: userName,
+              opponent: opponent
+            };
+
+            socket.emit("startGame", roomName, {...lobby, isHost: false});
+
             alert("game started");
-          // socket.emit("")
-        }}
-      >Start game</button>
+          
+            router.push({pathname: "/pong", query: lobby});
+
+          }}
+        >Start game</button>
+        :
+
+        <></>
+      }
+
     </>)
   }
 
@@ -204,6 +225,13 @@ export default function Home() {
       setIsConnected(socket.connected);
     }
 
+    function EStartedGame(lobby){
+
+      console.log(lobby);
+      router.push({ pathname: "/pong", query: lobby });
+
+    }
+
     function ESession(e) {
 
       const { sessionID, userID, username } = e;
@@ -245,12 +273,13 @@ export default function Home() {
     socket.on("errorJoiningRoom", EErrorJoiningRoom);
     socket.on("joinedRoomFromList", EJoinedRoomByList);
     socket.on("opponentJoined", EOpponentJoined);
+    socket.on("startedGame", EStartedGame);
     socket.on("session", ESession);
     socket.on("disconnect", EDisconnect)
     socket.on("connected", EConnected);
     socket.on("message_error", EMsgError);
-
-
+    
+    
     return () => {
       socket.off("errorAddingUser", EErrorAddingUser);
       socket.off("session", ESession);
@@ -260,6 +289,7 @@ export default function Home() {
       socket.off("errorJoiningRoom", EErrorJoiningRoom);
       socket.off("joinedRoomFromList", EJoinedRoomByList);
       socket.off("opponentJoined", EOpponentJoined);
+      socket.off("startedGame", EStartedGame);
       socket.off("disconnect", EDisconnect);
       socket.off("connected", EConnected);
       socket.off("message_error", EMsgError);
@@ -288,3 +318,5 @@ export default function Home() {
     </>
   )
 }
+
+

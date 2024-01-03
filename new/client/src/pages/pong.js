@@ -2,9 +2,14 @@ import Actor from '@/classes/pongGame/Actor';
 import Ball from '@/classes/pongGame/Ball';
 import Player from '@/classes/pongGame/Player';
 import { useSocketContext } from '@/contexts/socketContext';
-import React, { useEffect, useRef } from 'react'
+import { useRouter } from 'next/router';
+import React, { useEffect, useRef, useState } from 'react'
 
 export default function Pong() {
+
+    const [lobby, setLobby] = useState(undefined);
+    const router = useRouter();
+
     let context = undefined;
     let canvas = undefined;
 
@@ -35,6 +40,30 @@ export default function Pong() {
             context.fill();
         }
     }
+
+    useEffect(() => {
+
+        // console.log("Q", router.query);
+
+        let lobby = {
+            isHost: null,
+            host: null,
+            lobbyName: null,
+            oppponent: null
+        };
+
+        const recievedLobby = router.query;
+
+        lobby.isHost = recievedLobby.isHost;
+        lobby.host = recievedLobby.host;
+        lobby.lobbyName = recievedLobby.lobbyName;
+        lobby.oppponent = recievedLobby.oppponent;
+
+
+        // console.log("RL", recievedLobby);
+        // console.log("LOBBY:", lobby);
+
+    }, [router.query]);
 
     useEffect(() => {
 
@@ -90,8 +119,8 @@ export default function Pong() {
                 if (ball.direction === null) {
                     ball.direction = playerTurn === "p1" ? false : true;
                     ball.setNewDirection();
-                    
-                }else {
+
+                } else {
                     ball.updatePos();
 
                     // RGB

@@ -192,7 +192,7 @@ io.on("connection", (socket) => {
         // const clients = io.sockets.adapter.rooms.get(room);
 
         let lobby = lstLobbies.find(r => r.name === room);
-
+        
         if (lobby === undefined || lobby.opponent !== undefined) {
             socket.emit("errorJoiningRoom", lobby === undefined ? "Invalid room name" : "The room is full");
         }
@@ -203,14 +203,29 @@ io.on("connection", (socket) => {
             lstLobbies[index] = lobby;
 
             console.log(lstLobbies);
-
+            
             socket.join(room);
             io.to(room).emit("opponentJoined", lobby);
             socket.emit("joinedRoomFromList", lobby);
             
         }
 
+        
+    })
 
+    socket.on("startGame", (room, lobbyInfos) => {
+
+        let lobby = lstLobbies.find(r => r.name === room);
+
+
+        if (lobby === undefined) {
+            socket.emit("errorStartingGame", "Error starting the game");
+        }
+        else {
+            io.to(room).emit("startedGame", lobbyInfos);
+        }
+
+        
     })
 
 });
