@@ -13,7 +13,9 @@ const io = new Server({
         methods: ["GET", "POST"],
         allowedHeaders: ["my-custom-header"],
         credentials: true
-    }
+    },
+    pingInterval: 2000,
+    pingTimeout: 5000
 });
 
 let lstLobbies = [];

@@ -12,6 +12,7 @@ export default function Pong() {
 
     let context = undefined;
     let canvas = undefined;
+    let devicePixelRatio = undefined;
 
     let playerTurn = "p1";
 
@@ -69,6 +70,10 @@ export default function Pong() {
 
         canvas = canvasRef.current;
         context = canvas.getContext("2d");
+        devicePixelRatio = window.devicePixelRatio || 1;
+        canvas.height = window.innerHeight * devicePixelRatio;
+        canvas.width = window.innerWidth * devicePixelRatio;
+        
         let frameCount = 0;
         let animationFrameId;
         let actors = undefined;
@@ -134,6 +139,7 @@ export default function Pong() {
                         // console.log(actors.get("p1").points, actors.get("p2").points);
                     }
 
+                    
 
                 }
 
@@ -169,7 +175,7 @@ export default function Pong() {
     return (
         <>
             <div>
-                <canvas ref={canvasRef} id="pongGame" width="1800" height="800" style={{ margin: "0" }}></canvas>
+                <canvas ref={canvasRef} id="pongGame" width="100%" height="100%" style={{ margin: "0" }}></canvas>
             </div>
         </>
     )

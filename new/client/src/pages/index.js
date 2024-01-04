@@ -8,13 +8,13 @@ import { useEffect, useState } from 'react';
 
 const inter = Inter({ subsets: ['latin'] })
 import { socket } from "@/classes/socket";
-import { useRouter } from 'next/router'; 
+import { useRouter } from 'next/router';
 
 
 export default function Home() {
 
   const router = useRouter()
-  
+
   const [isConnected, setIsConnected] = useState(undefined);
   const [userName, setUserName] = useState(undefined);
   const [opponent, setOpponent] = useState(undefined);
@@ -99,10 +99,10 @@ export default function Home() {
                 onClick={() => {
                   socket.emit("requestJoinRoomByRList", r.name, userName);
                 }}
-
               >
                 {`Name: ${r.name} | Host: ${r.host}`}
-              </li>)
+              </li>
+            )
           })}
         </ul>
       </>
@@ -126,11 +126,11 @@ export default function Home() {
               opponent: opponent
             };
 
-            socket.emit("startGame", roomName, {...lobby, isHost: false});
+            socket.emit("startGame", roomName, { ...lobby, isHost: false });
 
             alert("game started");
-          
-            router.push({pathname: "/pong", query: lobby});
+
+            router.push({ pathname: "/pong", query: lobby });
 
           }}
         >Start game</button>
@@ -225,7 +225,7 @@ export default function Home() {
       setIsConnected(socket.connected);
     }
 
-    function EStartedGame(lobby){
+    function EStartedGame(lobby) {
 
       console.log(lobby);
       router.push({ pathname: "/pong", query: lobby });
@@ -278,8 +278,8 @@ export default function Home() {
     socket.on("disconnect", EDisconnect)
     socket.on("connected", EConnected);
     socket.on("message_error", EMsgError);
-    
-    
+
+
     return () => {
       socket.off("errorAddingUser", EErrorAddingUser);
       socket.off("session", ESession);
