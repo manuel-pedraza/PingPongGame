@@ -3,8 +3,8 @@ import Queue from "../Queue";
 const { default: Actor } = require("./Actor");
 
 export default class Player extends Actor {
-    constructor(name, ctx, x, y) {
-        super(ctx, x, y);
+    constructor(name, ctx, devicePixelRatio, x, y) {
+        super(ctx, devicePixelRatio, x, y);
         this.name = name;
         this.points = 0;
         this.speedQueue = new Queue();

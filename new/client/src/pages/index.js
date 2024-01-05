@@ -95,7 +95,7 @@ export default function Home() {
           {rommList.map((r, index) => {
             console.log("I:", typeof index, (index % 2));
             return (
-              <li key={`room-${r.name}`} className={`room-list-element${index % 2 === 1 ? " odd" : ""}`}
+              <li key={`room-${r.name}`} className={`room-list-element${index % 2 === 1 ? " odd" : ""}`} tabIndex="0"
                 onClick={() => {
                   socket.emit("requestJoinRoomByRList", r.name, userName);
                 }}

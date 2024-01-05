@@ -1,3 +1,7 @@
+*{
+  overflow: hidden;
+}
+
 ul.room-list {
   padding: 0;
   margin: 0 15px;

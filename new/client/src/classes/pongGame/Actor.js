@@ -1,8 +1,9 @@
 export default class Actor {
-    constructor(ctx, x, y) {
+    constructor(ctx, devicePixelRatio, x, y) {
         this.x = x;
         this.y = y;
         this.ctx = ctx;
+        this.devicePixelRatio = devicePixelRatio;
     }
 
     draw() {

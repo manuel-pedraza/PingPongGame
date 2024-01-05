@@ -23,6 +23,7 @@ export default function Pong() {
     const drawBg = () => {
         context.fillStyle = '#000000';
         context.fillRect(0, 0, canvas.width, canvas.height);
+        // context.fillRect(0, 0, canvas.width * devicePixelRatio, canvas.height * devicePixelRatio);
         context.fill();
 
     }
@@ -31,8 +32,8 @@ export default function Pong() {
 
         const middle = canvas.width / 2;
         const height = canvas.height;
-        const squareSize = 10;
-        const squaresToDraw = height / squareSize / 2;
+        const squareSize = 10 * devicePixelRatio;
+        const squaresToDraw = height / squareSize / 2 + 1;
 
         context.fillStyle = "#fff";
 
@@ -91,8 +92,8 @@ export default function Pong() {
         canvas.addEventListener("mousemove", mouseMoveHandler);
 
         function initPong() {
-            let player1 = new Player("p1", context, canvas.width * 0.05, context.canvas.height * 0.5);
-            let player2 = new Player("p2", context, canvas.width * 0.95, context.canvas.height * 0.5);
+            let player1 = new Player("p1", context, devicePixelRatio, canvas.width * 0.05, context.canvas.height * 0.5);
+            let player2 = new Player("p2", context, devicePixelRatio, canvas.width * 0.95, context.canvas.height * 0.5);
             let ball = new Ball(context, canvas.width / 2, canvas.height / 2);
 
             actors = new Map();
@@ -174,8 +175,8 @@ export default function Pong() {
 
     return (
         <>
-            <div>
-                <canvas ref={canvasRef} id="pongGame" width="100%" height="100%" style={{ margin: "0" }}></canvas>
+            <div style={{margin: "0", padding: "0"}}>
+                <canvas ref={canvasRef} id="pongGame" width="100%" height="100%" style={{ margin: "0", padding: "0" }}></canvas>
             </div>
         </>
     )
