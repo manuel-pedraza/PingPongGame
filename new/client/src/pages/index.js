@@ -234,16 +234,19 @@ export default function Home() {
 
     function ESession(e) {
 
-      const { sessionID, userID, username } = e;
+      const { sessionID, userID, user } = e;
+      const {name} = user;
+      const serverState = user.state;
+      console.log("SS", serverState);
       // console.log(e);
       socket.auth = { sessionID };
       localStorage.setItem("sessionID", sessionID);
       socket.userID = userID;
 
-      console.log("US", username);
-      if (username) {
-        socket.username = username;
-        setUserName(username);
+      console.log("US", name);
+      if (name) {
+        socket.username = name;
+        setUserName(name);
         setState("mainMenu")
       } else
         setState("name");
@@ -314,7 +317,7 @@ export default function Home() {
 
           {getActualState()}
         </div>
-      </main>
+      </main>    
     </>
   )
 }

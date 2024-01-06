@@ -5,6 +5,7 @@ const randomId = () => crypto.randomBytes(8).toString("hex");
 const User = require("./classes/User.js");
 const Lobby = require("./classes/Lobby.js");
 const { InMemorySessionStore } = require("./classes/sessionStore.js");
+const userStates  = require("./enums/userStates.js");
 const sessionStore = new InMemorySessionStore();
 
 const io = new Server({
@@ -35,7 +36,7 @@ io.use((socket, next) => {
             console.log("SESSION: ", session);
             socket.sessionID = sessionID;
             socket.userID = session.userID;
-            socket.username = session.username;
+            socket.user = session.user;
             return next();
         }
     }
@@ -52,6 +53,7 @@ io.use((socket, next) => {
 
     socket.sessionID = randomId();
     socket.userID = randomId();
+    socket.user = new User({name: undefined, state: userStates.inactive});
 
     next();
 
@@ -59,18 +61,20 @@ io.use((socket, next) => {
 
 io.on("connection", (socket) => {
 
-    console.log("SC (id, session): ", socket.id, socket.sessionID);
+    console.log("SC (id, session): ", socket.id, socket.sessionID, socket.user);
+
+    socket.user.state = userStates.mainMenu;
 
     sessionStore.saveSession(socket.sessionID, {
         userID: socket.userID,
-        username: socket.username,
+        user: socket.user,
         connected: true,
     });
 
     socket.emit("session", {
         sessionID: socket.sessionID,
         userID: socket.userID,
-        username: socket.username
+        user: socket.user,
     });
 
     socket.join(socket.userID);
@@ -80,22 +84,22 @@ io.on("connection", (socket) => {
     socket.on("addUser", (userToAdd) => {
 
         const userNotValid = userToAdd === "" || userToAdd === null;
-        if (userNotValid){
+        if (userNotValid) {
             socket.emit("errorAddingUser", "User is not valid");
             return;
         }
 
-        for (const user of sessionStore.sessions.values()) {
+        for (const session of sessionStore.sessions.values()) {
             // console.log(user.name);
-            if (user.username === userToAdd) {
+            if (session.user.name === userToAdd) {
 
 
-                if (user.connected === true) {
+                if (session.connected === true) {
                     socket.emit("errorAddingUser", "User already taken");
                     return
                 }
                 else {
-                    user.username = undefined;
+                    session.user.name = undefined;
                 }
 
                 break;
@@ -105,16 +109,15 @@ io.on("connection", (socket) => {
         console.log(userToAdd);
 
 
-        socket.username = userToAdd;
+        socket.user.name = userToAdd;
+        socket.user.state = userStates.mainMenu;
         sessionStore.saveSession(socket.sessionID, {
             userID: socket.userID,
-            username: userToAdd,
+            user: socket.user,
             connected: true,
         });
 
         console.log("SES", sessionStore.findAllSessions());
-
-        const user = new User({ name: userToAdd });
         socket.emit("userCreated");
 
     });
@@ -128,15 +131,16 @@ io.on("connection", (socket) => {
             // notify other users
             // socket.broadcast.emit("user disconnected", socket.userID);
             // update the connection status of the session
+            socket.user.state = userStates.inactive;
             sessionStore.saveSession(socket.sessionID, {
                 userID: socket.userID,
-                username: socket.username,
+                user: socket.user,
                 connected: false,
             });
 
             console.log(sessionStore.sessions);
 
-            const index = lstLobbies.findIndex(l => l.host === socket.username || l.opponent === socket.username);
+            const index = lstLobbies.findIndex(l => l.host === socket.user.name || l.opponent === socket.user.name);
 
             if (index > -1)
                 lstLobbies.splice(index, 1);
@@ -165,27 +169,7 @@ io.on("connection", (socket) => {
     });
 
     socket.on("requestRoomList", () => {
-        /*const lstSocketsId = (await io.fetchSockets()).map(s => s.id);
-        let lstRoomsToTreat = new Map(io.sockets.adapter.rooms);
-
-        lstSocketsId.forEach(sId => {
-            lstRoomsToTreat.delete(sId);
-        });
-
-
-        let lstRooms = [];
-
-        for (const rtt of lstRoomsToTreat.keys())
-            lstRooms.push(rtt);
-        */
-
-
-        /*
-        console.log("Rooms: ", io.sockets.adapter.rooms);
-        console.log("Sockets: ", lstSocketsId);
-        console.log("RTT", lstRoomsToTreat);
-        console.log("Rooms: ", lstRooms);
-        */
+        socket.user.state = userStates.roomList;
         socket.emit("requestRoomList", lstLobbies);
 
     });
@@ -194,31 +178,33 @@ io.on("connection", (socket) => {
         // const clients = io.sockets.adapter.rooms.get(room);
 
         let lobby = lstLobbies.find(r => r.name === room);
-        
+
         if (lobby === undefined || lobby.opponent !== undefined) {
             socket.emit("errorJoiningRoom", lobby === undefined ? "Invalid room name" : "The room is full");
         }
         else {
             lobby.opponent = name;
 
-            const index = lstLobbies.findIndex (l => l.name === room);
+            const index = lstLobbies.findIndex(l => l.name === room);
             lstLobbies[index] = lobby;
 
             console.log(lstLobbies);
-            
+
+            socket.user.state = userStates.mainMenu;
             socket.join(room);
+
             io.to(room).emit("opponentJoined", lobby);
             socket.emit("joinedRoomFromList", lobby);
-            
+
         }
 
-        
+
     })
 
     socket.on("startGame", (room, lobbyInfos) => {
 
         let lobby = lstLobbies.find(r => r.name === room);
-
+        socket.user.state = userStates.inGame;
 
         if (lobby === undefined) {
             socket.emit("errorStartingGame", "Error starting the game");
@@ -227,7 +213,7 @@ io.on("connection", (socket) => {
             io.to(room).emit("startedGame", lobbyInfos);
         }
 
-        
+
     })
 
 });
