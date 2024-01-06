@@ -5,7 +5,7 @@ const randomId = () => crypto.randomBytes(8).toString("hex");
 const User = require("./classes/User.js");
 const Lobby = require("./classes/Lobby.js");
 const { InMemorySessionStore } = require("./classes/sessionStore.js");
-const userStates  = require("./enums/userStates.js");
+const userStates = require("./enums/userStates.js");
 const sessionStore = new InMemorySessionStore();
 
 const io = new Server({
@@ -53,7 +53,7 @@ io.use((socket, next) => {
 
     socket.sessionID = randomId();
     socket.userID = randomId();
-    socket.user = new User({name: undefined, state: userStates.inactive});
+    socket.user = new User({ name: undefined, state: userStates.inactive });
 
     next();
 
@@ -63,7 +63,10 @@ io.on("connection", (socket) => {
 
     console.log("SC (id, session): ", socket.id, socket.sessionID, socket.user);
 
-    socket.user.state = userStates.mainMenu;
+    if (socket.user.name === "" || socket.user.name === null)
+        socket.user.state = userStates.inactive;
+    else
+        socket.user.state = userStates.mainMenu;
 
     sessionStore.saveSession(socket.sessionID, {
         userID: socket.userID,
@@ -131,6 +134,7 @@ io.on("connection", (socket) => {
             // notify other users
             // socket.broadcast.emit("user disconnected", socket.userID);
             // update the connection status of the session
+            socket.leave("requestRoomList");
             socket.user.state = userStates.inactive;
             sessionStore.saveSession(socket.sessionID, {
                 userID: socket.userID,
@@ -165,11 +169,13 @@ io.on("connection", (socket) => {
 
         console.log(`${socket.id} ${name} created room ${room}`);
         socket.join(room);
+        socket.broadcast.to("requestRoomList").emit("newRoomCreated", resLobby);
         socket.emit("roomCreated", resLobby);
     });
 
     socket.on("requestRoomList", () => {
         socket.user.state = userStates.roomList;
+        socket.join("requestRoomList");
         socket.emit("requestRoomList", lstLobbies);
 
     });
@@ -198,7 +204,6 @@ io.on("connection", (socket) => {
 
         }
 
-
     })
 
     socket.on("startGame", (room, lobbyInfos) => {
@@ -213,6 +218,17 @@ io.on("connection", (socket) => {
             io.to(room).emit("startedGame", lobbyInfos);
         }
 
+
+    })
+
+    socket.on("mainMenu", () => {
+
+        socket.user.state = userStates.mainMenu
+        
+        const index = lstLobbies.findIndex(l => l.host === socket.user.name);
+
+        if (index > -1)
+            lstLobbies.splice(index, 1);
 
     })
 

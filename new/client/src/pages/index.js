@@ -21,7 +21,19 @@ export default function Home() {
   const [roomName, setRoomName] = useState(undefined);
   const [isHost, setIsHost] = useState(false);
   const [state, setState] = useState("name");
-  const [rommList, setRoomList] = useState([]);
+  const [roomList, setRoomList] = useState([]);
+
+
+  function btnBackToMenu() {
+    return (
+      <button onClick={(e) => {
+        socket.emit("mainMenu");
+        setState("mainMenu")
+      }}>
+        Menu
+      </button>
+    )
+  }
 
   function askName() {
     return (
@@ -74,6 +86,7 @@ export default function Home() {
   function askRoomName() {
     return (
       <>
+        {btnBackToMenu()}
         <input type='text' onChange={(e) => {
           setRoomName(e.target.value ? e.target.value : "")
         }} />
@@ -88,16 +101,30 @@ export default function Home() {
   }
 
   function roomListMenu() {
+
     return (
       <>
+        {btnBackToMenu()}
         <h1>Room List</h1>
         <ul className='room-list'>
-          {rommList.map((r, index) => {
+          {roomList.map((r, index) => {
             console.log("I:", typeof index, (index % 2));
             return (
               <li key={`room-${r.name}`} className={`room-list-element${index % 2 === 1 ? " odd" : ""}`} tabIndex="0"
                 onClick={() => {
                   socket.emit("requestJoinRoomByRList", r.name, userName);
+                }}
+
+                onKeyUp={(e) => {
+                  switch (e.key) {
+                    case "Enter":
+                    case "Space":
+                      socket.emit("requestJoinRoomByRList", r.name, userName);
+
+                      break;
+                    default:
+                      break;
+                  }
                 }}
               >
                 {`Name: ${r.name} | Host: ${r.host}`}
@@ -111,6 +138,8 @@ export default function Home() {
 
   function roomLobby() {
     return (<>
+      {btnBackToMenu()}
+
       <h1>{`Lobby: ${roomName}`}</h1>
       <h2 style={{ color: "#f00" }}>{isHost === true ? userName : opponent}</h2>
       <h2>{isHost === false ? userName : opponent}</h2>
@@ -133,6 +162,7 @@ export default function Home() {
             router.push({ pathname: "/pong", query: lobby });
 
           }}
+
         >Start game</button>
         :
 
@@ -206,6 +236,10 @@ export default function Home() {
       setState("mainMenu");
     }
 
+    function ENewRoomCreated(resLobby) {
+      setRoomList(roomList.concat(resLobby));
+    }
+
     function ERoomCreated(lobby) {
       alert(`Room ${lobby.name} created`);
       setIsHost(true);
@@ -235,7 +269,7 @@ export default function Home() {
     function ESession(e) {
 
       const { sessionID, userID, user } = e;
-      const {name} = user;
+      const { name } = user;
       const serverState = user.state;
       console.log("SS", serverState);
       // console.log(e);
@@ -272,6 +306,7 @@ export default function Home() {
     socket.on("errorAddingUser", EErrorAddingUser);
     socket.on("userCreated", EUserCreated);
     socket.on("roomCreated", ERoomCreated);
+    socket.on("newRoomCreated", ENewRoomCreated);
     socket.on("requestRoomList", EGetRoomList);
     socket.on("errorJoiningRoom", EErrorJoiningRoom);
     socket.on("joinedRoomFromList", EJoinedRoomByList);
@@ -288,6 +323,7 @@ export default function Home() {
       socket.off("session", ESession);
       socket.off("userCreated", EUserCreated);
       socket.off("roomCreated", ERoomCreated);
+      socket.off("newRoomCreated", ENewRoomCreated);
       socket.off("requestRoomList", EGetRoomList);
       socket.off("errorJoiningRoom", EErrorJoiningRoom);
       socket.off("joinedRoomFromList", EJoinedRoomByList);
@@ -317,7 +353,7 @@ export default function Home() {
 
           {getActualState()}
         </div>
-      </main>    
+      </main>
     </>
   )
 }
