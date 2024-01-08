@@ -19,7 +19,15 @@ const io = new Server({
     pingTimeout: 5000
 });
 
-let lstLobbies = [];
+let lstLobbies = [
+    new Lobby({
+        name: 'hi',
+        host: 'a',
+        opponent: 'b'
+    })
+];
+
+
 // const io = new Server(3000, {options});
 
 io.use((socket, next) => {
@@ -223,12 +231,48 @@ io.on("connection", (socket) => {
 
     socket.on("mainMenu", () => {
 
-        socket.user.state = userStates.mainMenu
-        
+        socket.user.state = userStates.mainMenu;
+        socket.leave("requestRoomList");
+
         const index = lstLobbies.findIndex(l => l.host === socket.user.name);
 
         if (index > -1)
             lstLobbies.splice(index, 1);
+
+    });
+
+
+    socket.on("playerConnected", (lobby) => {
+
+        console.log("PLAYER CONNECTED");
+
+        const normalizedLobby = new Lobby({ ...lobby, name: lobby.lobbyName });
+        const { name } = normalizedLobby;
+
+        const index = lstLobbies.findIndex(l => l.name === name);
+
+        if (index < 0) {
+            console.log("LOBBY NOT FOUND");
+            return
+        }
+
+        // socket.join(name);
+        let lobbyTmp = lstLobbies[index];
+
+        if (lobby.isHost === "true")
+            lobbyTmp.hostConnected = true;
+        else
+            lobbyTmp.opponentConnected = true;
+
+        if (lobbyTmp.hostConnected === true && lobbyTmp.opponentConnected === true) {
+            lobbyTmp.gameStarted = true;
+            console.log("GAME CAN START");
+
+            io.to(name).emit("gameCanStart");
+
+        }
+
+        lstLobbies[index] = lobbyTmp;
 
     })
 

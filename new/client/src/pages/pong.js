@@ -1,13 +1,15 @@
 import Actor from '@/classes/pongGame/Actor';
 import Ball from '@/classes/pongGame/Ball';
 import Player from '@/classes/pongGame/Player';
-import { useSocketContext } from '@/contexts/socketContext';
+import { socket } from "@/classes/socket";
 import { useRouter } from 'next/router';
 import React, { useEffect, useRef, useState } from 'react'
 
 export default function Pong() {
 
     const [lobby, setLobby] = useState(undefined);
+    const [isConnected, setIsConnected] = useState(undefined);
+    const [gameHasStarted, setGameHasStarted] = useState(false);
     const router = useRouter();
 
     let context = undefined;
@@ -15,8 +17,6 @@ export default function Pong() {
     let devicePixelRatio = undefined;
 
     let playerTurn = "p1";
-
-    const { socket } = useSocketContext();
 
     const canvasRef = useRef(null);
 
@@ -51,16 +51,22 @@ export default function Pong() {
             isHost: null,
             host: null,
             lobbyName: null,
-            oppponent: null
+            opponent: null
         };
 
         const recievedLobby = router.query;
 
+        if (recievedLobby === undefined) {
+            setLobby(undefined);
+            return
+        }
+
         lobby.isHost = recievedLobby.isHost;
         lobby.host = recievedLobby.host;
         lobby.lobbyName = recievedLobby.lobbyName;
-        lobby.oppponent = recievedLobby.oppponent;
+        lobby.opponent = recievedLobby.opponent;
 
+        setLobby(lobby)
 
         // console.log("RL", recievedLobby);
         // console.log("LOBBY:", lobby);
@@ -74,7 +80,7 @@ export default function Pong() {
         devicePixelRatio = window.devicePixelRatio || 1;
         canvas.height = window.innerHeight * devicePixelRatio;
         canvas.width = window.innerWidth * devicePixelRatio;
-        
+
         let frameCount = 0;
         let animationFrameId;
         let actors = undefined;
@@ -140,7 +146,7 @@ export default function Pong() {
                         // console.log(actors.get("p1").points, actors.get("p2").points);
                     }
 
-                    
+
 
                 }
 
@@ -173,9 +179,113 @@ export default function Pong() {
 
     }, []);
 
+    useEffect(() => {
+
+
+        if (lobby === undefined)
+            return
+
+        // Socket
+        const sessionID = localStorage.getItem("sessionID");
+        if (sessionID) {
+            socket.auth = { sessionID };
+        }
+
+
+        if (socket.connected === false)
+            socket.connect();
+        else {
+            if (gameHasStarted === false) {
+                socket.emit("playerConnected", lobby);
+            }
+        }
+
+
+        function EConnected() {
+            if (socket.recovered) {
+                // any event missed during the disconnection period will be received now
+                console.log("Reconnected to server");
+            } else {
+                console.log("Connected to server");
+                // new or unrecoverable session
+            }
+
+            console.log("playerConnected");
+            socket.emit("playerConnected", lobby);
+
+            // setState("name");
+            setIsConnected(socket.connected);
+        }
+
+        function ESession(e) {
+
+            const { sessionID, userID, user } = e;
+            const { name } = user;
+            const serverState = user.state;
+            console.log("SS", serverState);
+            // console.log(e);
+            socket.auth = { sessionID };
+            localStorage.setItem("sessionID", sessionID);
+            socket.userID = userID;
+
+            console.log("US", name);
+            /*
+            if (name) {
+                socket.username = name;
+                setUserName(name);
+                setState("mainMenu")
+            } else
+                setState("name");
+            */
+        }
+
+        function EDisconnect() {
+            setIsConnected(socket.connected);
+            // setState("name")
+        }
+
+        function EGameCanStart() {
+            setGameHasStarted(true);
+            console.log("GAME CAN START");
+        }
+
+        socket.on("session", ESession);
+        socket.on("gameCanStart", EGameCanStart);
+        socket.on("disconnect", EDisconnect)
+        socket.on("connect", EConnected);
+
+        return () => {
+            socket.off("session", ESession);
+            socket.off("gameCanStart", EGameCanStart);
+            socket.off("disconnect", EDisconnect);
+            socket.off("connect", EConnected);
+        }
+
+    }, [socket, lobby])
+
     return (
         <>
-            <div style={{margin: "0", padding: "0"}}>
+            <div style={{ margin: "0", padding: "0", position: "relative" }}>
+
+                {lobby !== undefined ?
+                    gameHasStarted === false ?
+                        <div style={{
+                            position: "absolute",
+                            height: "100%", width: "100%",
+                            background: "#ffffff80", display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            flexDirection: "column"
+                        }}> <h1>Waiting for players ...</h1>
+                            <div className='loader' />
+                        </div>
+                        :
+                        <>
+                            {/* animation start of a game ig */}
+                        </>
+                    :
+                    <></>
+                }
                 <canvas ref={canvasRef} id="pongGame" width="100%" height="100%" style={{ margin: "0", padding: "0" }}></canvas>
             </div>
         </>

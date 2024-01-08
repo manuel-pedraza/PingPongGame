@@ -314,7 +314,7 @@ export default function Home() {
     socket.on("startedGame", EStartedGame);
     socket.on("session", ESession);
     socket.on("disconnect", EDisconnect)
-    socket.on("connected", EConnected);
+    socket.on("connect", EConnected);
     socket.on("message_error", EMsgError);
 
 
@@ -330,7 +330,7 @@ export default function Home() {
       socket.off("opponentJoined", EOpponentJoined);
       socket.off("startedGame", EStartedGame);
       socket.off("disconnect", EDisconnect);
-      socket.off("connected", EConnected);
+      socket.off("connect", EConnected);
       socket.off("message_error", EMsgError);
     }
 
