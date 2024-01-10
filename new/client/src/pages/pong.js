@@ -43,28 +43,26 @@ export default function Pong() {
         }
     }
 
+    // Lobby Effect
     useEffect(() => {
 
         // console.log("Q", router.query);
 
-        let lobby = {
-            isHost: null,
-            host: null,
-            lobbyName: null,
-            opponent: null
-        };
-
         const recievedLobby = router.query;
 
-        if (recievedLobby === undefined) {
+        if (!recievedLobby ||
+            !recievedLobby.isHost && !recievedLobby.host && !recievedLobby.lobbyName && !recievedLobby.opponent
+        ) {
             setLobby(undefined);
             return
         }
 
-        lobby.isHost = recievedLobby.isHost;
-        lobby.host = recievedLobby.host;
-        lobby.lobbyName = recievedLobby.lobbyName;
-        lobby.opponent = recievedLobby.opponent;
+        let lobby = {
+            isHost: recievedLobby.isHost,
+            host: recievedLobby.host,
+            lobbyName: recievedLobby.lobbyName,
+            opponent: recievedLobby.opponent
+        };
 
         setLobby(lobby)
 
@@ -73,6 +71,8 @@ export default function Pong() {
 
     }, [router.query]);
 
+
+    // GameLogic Effect
     useEffect(() => {
 
         canvas = canvasRef.current;
@@ -85,17 +85,25 @@ export default function Pong() {
         let animationFrameId;
         let actors = undefined;
 
-        const mouseMoveHandler = (e) => {
-            let p = actors.get("p1");
+        function EOnMouseMove(e) {
 
-            if (p !== undefined) {
-                const speed = Math.abs(p.y - e.y);
-                p.speedQueue.enqueue(speed);
+            let playerControl = lobby && lobby.isHost === false ? "p2" : "p1";
+
+            let p = actors.get(playerControl);
+
+            if (p) {
+                // const speed = Math.abs(p.y - e.y);
+                // p.speedQueue.enqueue(speed);
+
+                if (lobby) {
+                    socket.emit("event", {event: "mouseMove", value: e.y});
+                }
+
                 p.updatePos(p.x, e.y);
             }
         }
 
-        canvas.addEventListener("mousemove", mouseMoveHandler);
+        canvas.addEventListener("mousemove", EOnMouseMove);
 
         function initPong() {
             let player1 = new Player("p1", context, devicePixelRatio, canvas.width * 0.05, context.canvas.height * 0.5);
@@ -120,9 +128,9 @@ export default function Pong() {
 
             // Update Ball new Pos
             let ball = actors.get("ball");
-            if (ball !== undefined) {
+            if (ball) {
 
-                if (ball.player === undefined && ball.direction !== null) {
+                if (!ball.player && ball.direction !== null) {
                     const p = ball.direction === true ? "p1" : "p2";
                     // console.log(playerTurn, ball.direction, p);
                     ball.player = actors.get(p);
@@ -174,15 +182,16 @@ export default function Pong() {
 
         return () => {
             window.cancelAnimationFrame(animationFrameId);
-            canvas.removeEventListener("mousemove", mouseMoveHandler)
+            canvas.removeEventListener("mousemove", EOnMouseMove)
         }
 
     }, []);
 
+    // Socket Effect
     useEffect(() => {
 
-
-        if (lobby === undefined)
+        console.log("l", lobby);
+        if (!lobby)
             return
 
         // Socket
@@ -267,7 +276,9 @@ export default function Pong() {
         <>
             <div style={{ margin: "0", padding: "0", position: "relative" }}>
 
-                {lobby !== undefined ?
+                {!lobby ?
+                    <></>
+                    :
                     gameHasStarted === false ?
                         <div style={{
                             position: "absolute",
@@ -283,8 +294,6 @@ export default function Pong() {
                         <>
                             {/* animation start of a game ig */}
                         </>
-                    :
-                    <></>
                 }
                 <canvas ref={canvasRef} id="pongGame" width="100%" height="100%" style={{ margin: "0", padding: "0" }}></canvas>
             </div>
