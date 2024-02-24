@@ -169,7 +169,7 @@ io.on("connection", (socket) => {
     socket.on("createRoom", (room, name) => {
         // TODO: 
         //  - Add validations
-        //  - Make broadcast for those looking the room list
+        //  - Make broadcast for those looking for a room
 
         const resLobby = new Lobby({ name: room, host: name });
         lstLobbies.push(resLobby);
@@ -193,8 +193,8 @@ io.on("connection", (socket) => {
 
         let lobby = lstLobbies.find(r => r.name === room);
 
-        if (lobby === undefined || lobby.opponent !== undefined) {
-            socket.emit("errorJoiningRoom", lobby === undefined ? "Invalid room name" : "The room is full");
+        if (!lobby || lobby.opponent) {
+            socket.emit("errorJoiningRoom", !lobby ? "Invalid room name" : "The room is full");
         }
         else {
             lobby.opponent = name;
@@ -219,7 +219,7 @@ io.on("connection", (socket) => {
         let lobby = lstLobbies.find(r => r.name === room);
         socket.user.state = userStates.inGame;
 
-        if (lobby === undefined) {
+        if (!lobby) {
             socket.emit("errorStartingGame", "Error starting the game");
         }
         else {
