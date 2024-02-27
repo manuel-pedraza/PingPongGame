@@ -1,22 +1,14 @@
 
 import React from 'react'
 
-
-
-export function askName() {
+export function AskName({ onChange, onClick }) {
     return (
         <div>
             <input type='text' onChange={(e) => {
-                setUserName(e.target.value ? e.target.value : "")
+                onChange?.(e);
             }} />
             <button onClick={(e) => {
-                try {
-                    // socket.auth = { username: userName};
-
-                    socket.emit("addUser", userName);
-                } catch (error) {
-
-                }
+                onClick?.(e);
 
             }}>
                 Send Name
@@ -25,7 +17,7 @@ export function askName() {
     );
 }
 
-export function cantConnectToServer() {
+export function CantConnectToServer() {
     return (
         <>
             <h1 style={{ color: "#a00" }}>Can't connect to server</h1>
@@ -33,17 +25,20 @@ export function cantConnectToServer() {
     )
 }
 
-export function mainMenu() {
+export function MainMenu({ createRoomOnClick, roomListOnClick }) {
     return (
         <>
             <button onClick={(e) => {
-                setState("roomName");
+
+                createRoomOnClick?.();
+
             }}>
                 Create Room
             </button>
             <button onClick={(e) => {
-                socket.emit("requestRoomList");
-                setState("roomListMenu");
+                roomListOnClick?.();
+
+
             }}>
                 See Room List
             </button>
@@ -51,16 +46,20 @@ export function mainMenu() {
     )
 }
 
-export function askRoomName() {
+export function AskRoomName({ btnBackToMenu, roomNameOnChangeEvent, createRoomOnClickEvent }) {
     return (
         <>
             {btnBackToMenu()}
             <input type='text' onChange={(e) => {
-                setRoomName(e.target.value ? e.target.value : "")
+
+
+                roomNameOnChangeEvent?.(e);
+
+
             }} />
             <button onClick={(e) => {
+                createRoomOnClickEvent?.();
 
-                socket.emit("createRoom", roomName, userName);
             }}>
                 Send Room Name
             </button>
@@ -68,7 +67,7 @@ export function askRoomName() {
     )
 }
 
-export function roomListMenu() {
+export function RoomListMenu({ btnBackToMenu, roomList, joinRoom }) {
 
     return (
         <>
@@ -79,15 +78,15 @@ export function roomListMenu() {
                     console.log("I:", typeof index, (index % 2));
                     return (
                         <li key={`room-${r.name}`} className={`room-list-element${index % 2 === 1 ? " odd" : ""}`} tabIndex="0"
-                            onClick={() => {
-                                socket.emit("requestJoinRoomByRList", r.name, userName);
+                            onClick={(e) => {
+                                joinRoom?.(e, r.name);
                             }}
 
                             onKeyUp={(e) => {
                                 switch (e.key) {
                                     case "Enter":
                                     case "Space":
-                                        socket.emit("requestJoinRoomByRList", r.name, userName);
+                                        joinRoom?.(e, r.name);
 
                                         break;
                                     default:
@@ -104,7 +103,7 @@ export function roomListMenu() {
     )
 }
 
-export function roomLobby() {
+export function RoomLobby({ btnBackToMenu, isHost, roomName, userName, opponent, startOnClick }) {
     return (<>
         {btnBackToMenu()}
 
@@ -115,20 +114,9 @@ export function roomLobby() {
         {isHost === true && opponent ?
             <button
                 onClick={(e) => {
+                    startOnClick?.(e);
 
-                    let lobby = {
-                        isHost: isHost,
-                        lobbyName: roomName,
-                        host: userName,
-                        opponent: opponent
-                    };
-
-                    socket.emit("startGame", roomName, { ...lobby, isHost: false });
-
-                    alert("game started");
-
-                    router.push({ pathname: "/pong", query: lobby });
-
+                    
                 }}
 
             >Start game</button>

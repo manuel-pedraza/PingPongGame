@@ -2,6 +2,7 @@ import Head from 'next/head'
 import Image from 'next/image'
 import { Inter } from 'next/font/google'
 import { useSocketContext } from '@/contexts/socketContext'
+import { AskName, AskRoomName, CantConnectToServer, RoomListMenu, MainMenu, RoomLobby } from "@/components/MainMenuList";
 
 import { useEffect, useState } from 'react';
 // var socket = undefined;
@@ -34,24 +35,79 @@ export default function Home() {
       </button>
     )
   }
-  
+
 
   function getActualState() {
     // const connection = tryToConnect();
     console.log("STATE: ", state);
     switch (state) {
       case "name":
-        return askName();
+        return <AskName
+          onChange={(e) => {
+            setUserName(e.target.value ? e.target.value : "")
+
+          }}
+
+          onClick={(e) => {
+            try {
+              // socket.auth = { username: userName};
+
+              socket.emit("addUser", userName);
+            } catch (error) {
+
+            }
+          }}
+        />;
       case "mainMenu":
-        return mainMenu();
+        return <MainMenu
+          createRoomOnClick={() => {
+            setState("roomName");
+          }}
+
+          roomListOnClick={() => {
+            socket.emit("requestRoomList");
+            setState("roomListMenu");
+
+          }}
+        />;
       case "roomName":
-        return askRoomName();
+        return <AskRoomName btnBackToMenu={btnBackToMenu}
+          roomNameOnChangeEvent={(e) => {
+            setRoomName(e.target.value ? e.target.value : "");
+          }}
+
+          createRoomOnClickEvent={(e) => {
+            socket.emit("createRoom", roomName, userName);
+          }}
+        />;
       case "roomListMenu":
-        return roomListMenu();
+        return <RoomListMenu roomList={roomList} btnBackToMenu={btnBackToMenu}
+          joinRoom={(e, room) => {
+            socket.emit("requestJoinRoomByRList", room, userName);
+
+          }}
+        />;
       case "cantConnectToServer":
-        return cantConnectToServer();
+        return <CantConnectToServer />;
       case "awaitRoom":
-        return roomLobby();
+        return <RoomLobby btnBackToMenu={btnBackToMenu} roomName={roomName} isHost={isHost} opponent={opponent} userName={userName}
+          startOnClick={(e) => {
+
+            let lobby = {
+              isHost: isHost,
+              lobbyName: roomName,
+              host: userName,
+              opponent: opponent
+            };
+
+            socket.emit("startGame", roomName, { ...lobby, isHost: false });
+
+            alert("game started");
+
+            router.push({ pathname: "/pong", query: lobby });
+
+          }}
+        />;
       default:
 
         return (<></>);
