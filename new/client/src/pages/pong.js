@@ -96,7 +96,7 @@ export default function Pong() {
                 // p.speedQueue.enqueue(speed);
 
                 if (lobby) {
-                    socket.emit("event", {event: "mouseMove", value: e.y});
+                    socket.emit("EPong", {event: "mouseMove", value: e.y});
                 }
 
                 p.updatePos(p.x, e.y);

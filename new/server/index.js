@@ -253,7 +253,7 @@ io.on("connection", (socket) => {
 
         if (index < 0) {
             console.log("LOBBY NOT FOUND");
-            return
+            return;
         }
 
         // socket.join(name);
@@ -276,6 +276,19 @@ io.on("connection", (socket) => {
 
     })
 
+
+    socket.on("EPong", ({event, value, }) => {
+
+        switch (event) {
+            case "mouseMove":
+                
+                break;
+        
+            default:
+                break;
+        }
+
+    });
 });
 
 io.listen(3001, () => {

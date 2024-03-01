@@ -7,14 +7,14 @@ import { AskName, AskRoomName, CantConnectToServer, RoomListMenu, MainMenu, Room
 import { useEffect, useState } from 'react';
 // var socket = undefined;
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'] });
 import { socket } from "@/classes/socket";
 import { useRouter } from 'next/router';
 
 
 export default function Home() {
 
-  const router = useRouter()
+  const router = useRouter();
 
   const [isConnected, setIsConnected] = useState(undefined);
   const [userName, setUserName] = useState(undefined);
@@ -23,7 +23,6 @@ export default function Home() {
   const [isHost, setIsHost] = useState(false);
   const [state, setState] = useState("name");
   const [roomList, setRoomList] = useState([]);
-
 
   function btnBackToMenu() {
     return (
@@ -35,7 +34,6 @@ export default function Home() {
       </button>
     )
   }
-
 
   function getActualState() {
     // const connection = tryToConnect();
