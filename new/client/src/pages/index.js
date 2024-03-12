@@ -2,7 +2,7 @@ import Head from 'next/head'
 import Image from 'next/image'
 import { Inter } from 'next/font/google'
 import { useSocketContext } from '@/contexts/socketContext'
-import { AskName, AskRoomName, CantConnectToServer, RoomListMenu, MainMenu, RoomLobby } from "@/components/MainMenuList";
+import { AskName, AskRoomParams, CantConnectToServer, RoomListMenu, MainMenu, RoomLobby } from "@/components/MainMenuList";
 
 import { useEffect, useState } from 'react';
 // var socket = undefined;
@@ -20,6 +20,7 @@ export default function Home() {
   const [userName, setUserName] = useState(undefined);
   const [opponent, setOpponent] = useState(undefined);
   const [roomName, setRoomName] = useState(undefined);
+  const [roomPoints, setRoomPoints] = useState(undefined);
   const [isHost, setIsHost] = useState(false);
   const [state, setState] = useState("name");
   const [roomList, setRoomList] = useState([]);
@@ -59,7 +60,7 @@ export default function Home() {
       case "mainMenu":
         return <MainMenu
           createRoomOnClick={() => {
-            setState("roomName");
+            setState("roomParams");
           }}
 
           roomListOnClick={() => {
@@ -68,14 +69,19 @@ export default function Home() {
 
           }}
         />;
-      case "roomName":
-        return <AskRoomName btnBackToMenu={btnBackToMenu}
+      case "roomParams":
+        return <AskRoomParams btnBackToMenu={btnBackToMenu}
           roomNameOnChangeEvent={(e) => {
             setRoomName(e.target.value ? e.target.value : "");
           }}
 
+          roomPointsOnChangeEvent={(e) => {
+            setRoomPoints(e.target.value ? e.target.value : 10);
+          }}
+          
+
           createRoomOnClickEvent={(e) => {
-            socket.emit("createRoom", roomName, userName);
+            socket.emit("createRoom", roomName, userName, roomPoints);
           }}
         />;
       case "roomListMenu":

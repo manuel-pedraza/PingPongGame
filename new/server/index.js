@@ -6,6 +6,7 @@ const User = require("./classes/User.js");
 const Lobby = require("./classes/Lobby.js");
 const { InMemorySessionStore } = require("./classes/sessionStore.js");
 const userStates = require("./enums/userStates.js");
+const { default: Game } = require("./classes/Game.js");
 const sessionStore = new InMemorySessionStore();
 
 const io = new Server({
@@ -21,11 +22,13 @@ const io = new Server({
 
 let lstLobbies = [
     new Lobby({
-        name: 'hi',
-        host: 'a',
-        opponent: 'b'
+        name: '````hi````',
+        host: 'z',
+        opponent: 'x'
     })
 ];
+
+let games = [];
 
 
 // const io = new Server(3000, {options});
@@ -166,12 +169,12 @@ io.on("connection", (socket) => {
 
     });
 
-    socket.on("createRoom", (room, name) => {
+    socket.on("createRoom", (room, name, points) => {
         // TODO: 
         //  - Add validations
         //  - Make broadcast for those looking for a room
 
-        const resLobby = new Lobby({ name: room, host: name });
+        const resLobby = new Lobby({ name: room, host: name, points: points });
         lstLobbies.push(resLobby);
         console.log(lstLobbies);
 
@@ -268,6 +271,7 @@ io.on("connection", (socket) => {
             lobbyTmp.gameStarted = true;
             console.log("GAME CAN START");
 
+            games.push(new Game(lobby));
             io.to(name).emit("gameCanStart");
 
         }
@@ -275,6 +279,9 @@ io.on("connection", (socket) => {
         lstLobbies[index] = lobbyTmp;
 
     })
+
+
+
 
 
     socket.on("EPong", ({event, value, }) => {

@@ -46,7 +46,7 @@ export function MainMenu({ createRoomOnClick, roomListOnClick }) {
     )
 }
 
-export function AskRoomName({ btnBackToMenu, roomNameOnChangeEvent, createRoomOnClickEvent }) {
+export function AskRoomParams({ btnBackToMenu, roomNameOnChangeEvent, roomPointsOnChangeEvent, createRoomOnClickEvent }) {
     return (
         <>
             {btnBackToMenu()}
@@ -57,11 +57,18 @@ export function AskRoomName({ btnBackToMenu, roomNameOnChangeEvent, createRoomOn
 
 
             }} />
+            <input type='text' onChange={(e) => {
+
+
+                roomPointsOnChangeEvent?.(e);
+
+
+            }} />
             <button onClick={(e) => {
                 createRoomOnClickEvent?.();
 
             }}>
-                Send Room Name
+                Send room parameters
             </button>
         </>
     )
@@ -94,7 +101,7 @@ export function RoomListMenu({ btnBackToMenu, roomList, joinRoom }) {
                                 }
                             }}
                         >
-                            {`Name: ${r.name} | Host: ${r.host}`}
+                            {`Name: ${r.name} | Host: ${r.host} | Points: ${r.points}`}
                         </li>
                     )
                 })}

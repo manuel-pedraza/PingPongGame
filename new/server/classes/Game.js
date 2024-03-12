@@ -1,17 +1,17 @@
 const Lobby = require("./Lobby");
 
-export default class Game {
+class Game {
 
-    constructor(Lobby){
+    constructor({Lobby}){
 
-        this.Lobby = new Lobby(Lobby);
+        this.lobby = new Lobby(Lobby);
         this.hostPos = 0;
         this.opponentPos = 0;
         this.hostPoints = 0;
         this.opponentPoints = 0;
         this.ball = {x: 0, y: 0};
-
     }
-
-
 }
+
+
+module.exports = Game;
