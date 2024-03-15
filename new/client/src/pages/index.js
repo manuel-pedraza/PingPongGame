@@ -99,12 +99,10 @@ export default function Home() {
 
             let lobby = {
               isHost: isHost,
-              lobbyName: roomName,
-              host: userName,
-              opponent: opponent
+              lobbyName: roomName
             };
 
-            socket.emit("startGame", roomName, { ...lobby, isHost: false });
+            socket.emit("startGame", roomName);
 
             alert("game started");
 

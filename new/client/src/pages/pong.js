@@ -50,8 +50,7 @@ export default function Pong() {
 
         const recievedLobby = router.query;
 
-        if (!recievedLobby ||
-            !recievedLobby.isHost && !recievedLobby.host && !recievedLobby.lobbyName && !recievedLobby.opponent
+        if (!recievedLobby || !recievedLobby.isHost && !recievedLobby.lobbyName
         ) {
             setLobby(undefined);
             return
@@ -59,9 +58,7 @@ export default function Pong() {
 
         let lobby = {
             isHost: recievedLobby.isHost,
-            host: recievedLobby.host,
             lobbyName: recievedLobby.lobbyName,
-            opponent: recievedLobby.opponent
         };
 
         setLobby(lobby)
@@ -89,6 +86,8 @@ export default function Pong() {
 
             let playerControl = lobby && lobby.isHost === false ? "p2" : "p1";
 
+            console.log(lobby && lobby.isHost === false);
+
             let p = actors.get(playerControl);
 
             if (p) {
@@ -96,7 +95,7 @@ export default function Pong() {
                 // p.speedQueue.enqueue(speed);
 
                 if (lobby) {
-                    socket.emit("EPong", {event: "mouseMove", value: e.y});
+                    socket.emit("EPong", lobby.lobbyName, {event: "mouseMove", value: e.y});
                 }
 
                 p.updatePos(p.x, e.y);
@@ -200,6 +199,8 @@ export default function Pong() {
             socket.auth = { sessionID };
         }
 
+
+        console.log("test");
 
         if (socket.connected === false)
             socket.connect();

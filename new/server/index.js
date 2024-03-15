@@ -1,3 +1,4 @@
+// understand .emit() use cases: https://stackoverflow.com/questions/10058226/send-response-to-all-clients-except-sender
 const { Server } = require("socket.io");
 
 const crypto = require("node:crypto");
@@ -6,7 +7,8 @@ const User = require("./classes/User.js");
 const Lobby = require("./classes/Lobby.js");
 const { InMemorySessionStore } = require("./classes/sessionStore.js");
 const userStates = require("./enums/userStates.js");
-const { default: Game } = require("./classes/Game.js");
+const Game = require("./classes/Game.js");
+const { error } = require("node:console");
 const sessionStore = new InMemorySessionStore();
 
 const io = new Server({
@@ -28,7 +30,7 @@ let lstLobbies = [
     })
 ];
 
-let games = [];
+let games = new Map();
 
 
 // const io = new Server(3000, {options});
@@ -37,7 +39,7 @@ io.use((socket, next) => {
 
     const sessionID = socket.handshake.auth.sessionID;
 
-    console.log("SESSION: ", sessionID);
+    // console.log("SESSION: ", sessionID);
     if (sessionID) {
         // find existing session
         const session = sessionStore.findSession(sessionID);
@@ -226,7 +228,8 @@ io.on("connection", (socket) => {
             socket.emit("errorStartingGame", "Error starting the game");
         }
         else {
-            io.to(room).emit("startedGame", lobbyInfos);
+            games.set(room, new Game());
+            socket.broadcast.to(room).emit("startedGame", {lobbyName: room});
         }
 
 
@@ -261,17 +264,21 @@ io.on("connection", (socket) => {
 
         // socket.join(name);
         let lobbyTmp = lstLobbies[index];
+        let game = games.get(name);
 
-        if (lobby.isHost === "true")
-            lobbyTmp.hostConnected = true;
-        else
-            lobbyTmp.opponentConnected = true;
+        if (lobby.isHost === "true"){
+            game.hostSocket = socket.id;
+        }
+        else{
+            game.opponentSocket = socket.id;
 
-        if (lobbyTmp.hostConnected === true && lobbyTmp.opponentConnected === true) {
+        }
+
+        if (game.hostSocket && game.opponentSocket) {
             lobbyTmp.gameStarted = true;
             console.log("GAME CAN START");
 
-            games.push(new Game(lobby));
+            games.set(name, game);
             io.to(name).emit("gameCanStart");
 
         }
@@ -280,17 +287,42 @@ io.on("connection", (socket) => {
 
     })
 
+    setInterval(() => {
+        /*
+                games.forEach(g => {
+        
+                    if (!g.hasGameEnded) {
+        
+                        io.to(g.lobby.name).emit("updatePlayers", {
+                            hostPos: g.hostPos,
+                            opponentPos: g.opponentPos,
+                            hostPoints: g.hostPoints,
+                            opponentPoints: g.opponentPoints,
+                        });;
+        
+        
+                    }
+        
+        
+                });
+        */
+    }, 15);
 
 
+    socket.on("EPong", (roomName, { event, value, }) => {
 
+        let game = games.get(roomName);
 
-    socket.on("EPong", ({event, value, }) => {
+        if (!socket.rooms.has(roomName) || !game) return;
+
+        const isHost = game.hostSocket === socket.id;
 
         switch (event) {
             case "mouseMove":
-                
+                console.log("V", value);
+                game.changePos(isHost, value);
                 break;
-        
+
             default:
                 break;
         }
