@@ -3,14 +3,18 @@ import Ball from '@/classes/pongGame/Ball';
 import Player from '@/classes/pongGame/Player';
 import { socket } from "@/classes/socket";
 import { useRouter } from 'next/router';
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 export default function Pong() {
 
     const [lobby, setLobby] = useState(undefined);
     const [isConnected, setIsConnected] = useState(undefined);
+    // const [game, setGame] = useState(undefined);
     const [gameHasStarted, setGameHasStarted] = useState(false);
     const router = useRouter();
+
+
+    // const gameData = useMemo(() => {return game}, [game]);
 
     let context = undefined;
     let canvas = undefined;
@@ -18,6 +22,7 @@ export default function Pong() {
 
     let playerTurn = "p1";
 
+    const game = useRef(null);
     const canvasRef = useRef(null);
 
     const drawBg = () => {
@@ -57,7 +62,7 @@ export default function Pong() {
         }
 
         let lobby = {
-            isHost: recievedLobby.isHost,
+            isHost: recievedLobby.isHost ? recievedLobby.isHost : false,
             lobbyName: recievedLobby.lobbyName,
         };
 
@@ -84,9 +89,9 @@ export default function Pong() {
 
         function EOnMouseMove(e) {
 
-            let playerControl = lobby && lobby.isHost === false ? "p2" : "p1";
+            let playerControl = lobby && (!lobby.isHost || lobby.isHost === false) ? "p2" : "p1";
 
-            console.log(lobby && lobby.isHost === false);
+            // console.log("lON", lobby);
 
             let p = actors.get(playerControl);
 
@@ -95,7 +100,7 @@ export default function Pong() {
                 // p.speedQueue.enqueue(speed);
 
                 if (lobby) {
-                    socket.emit("EPong", lobby.lobbyName, {event: "mouseMove", value: e.y});
+                    socket.emit("EPong", lobby.lobbyName, { event: "mouseMove", value: e.y });
                 }
 
                 p.updatePos(p.x, e.y);
@@ -158,6 +163,23 @@ export default function Pong() {
                 }
 
             }
+            
+            // console.log("S", game.current);
+            if(lobby && game.current && game.current !== null){
+
+                console.log(game.current);
+
+                let host = actors.get("p1");
+                let opp = actors.get("p2");
+
+                host.updatePos(host.x, game.current.hostPos);
+                host.points = game.current.hostPoints;
+
+                opp.updatePos(opp.x, game.current.opponentPos);
+                opp.points = game.current.opponentPoints;
+
+                game.current = null;
+            }
 
             // Draw actors
             actors.forEach(a => {
@@ -184,14 +206,13 @@ export default function Pong() {
             canvas.removeEventListener("mousemove", EOnMouseMove)
         }
 
-    }, []);
+    }, [gameHasStarted]);
 
     // Socket Effect
     useEffect(() => {
 
         console.log("l", lobby);
-        if (!lobby)
-            return
+        if (!lobby) return;
 
         // Socket
         const sessionID = localStorage.getItem("sessionID");
@@ -225,6 +246,14 @@ export default function Pong() {
 
             // setState("name");
             setIsConnected(socket.connected);
+        }
+
+        function EUpdatePlayers(e) {
+            const { hostPos, opponentPos, hostPoints, opponentPoints } = e;
+
+            console.log("E", e);
+            game.current = e;
+
         }
 
         function ESession(e) {
@@ -261,12 +290,14 @@ export default function Pong() {
 
         socket.on("session", ESession);
         socket.on("gameCanStart", EGameCanStart);
+        socket.on("updatePlayers", EUpdatePlayers);
         socket.on("disconnect", EDisconnect)
         socket.on("connect", EConnected);
 
         return () => {
             socket.off("session", ESession);
             socket.off("gameCanStart", EGameCanStart);
+            socket.off("updatePlayers", EUpdatePlayers);
             socket.off("disconnect", EDisconnect);
             socket.off("connect", EConnected);
         }

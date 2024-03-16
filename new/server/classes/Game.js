@@ -6,7 +6,9 @@ class Game {
 
         this.hostSocket = undefined;
         this.opponentSocket = undefined;
-        this.hasChanged = false;
+        this.havePointsChanged = false;
+        this.hasPosChanged = false;
+
         this.hasGameEnded = false;
         this.hostPos = undefined;
         this.opponentPos = undefined;
@@ -20,16 +22,21 @@ class Game {
         return this.hasGameEnded;
     }
 
+    resetChangedProps(){
+        this.hasPosChanged = false;
+        this.havePointsChanged = false;
+    }
+
     addHostPoint() {
         this.hostPoints++;
         this.lookForEndGame();
-        this.hasChanged = true;
+        this.havePointsChanged = true;
     }
     
     addOpponentPoint() {
         this.opponentPoints++;
         this.lookForEndGame();
-        this.hasChanged = true;
+        this.havePointsChanged = true;
     }
 
 
@@ -48,13 +55,15 @@ class Game {
     }
 
     changeHostPos(newY){
+        if(newY === this.hostPos) return;
         this.hostPos = newY;
-        this.hasChanged = true;
+        this.hasPosChanged = true;
     }
-
+    
     changeOppPos(newY) {
+        if(newY === this.opponentPos) return;
         this.opponentPos = newY;
-        this.hasChanged = true;
+        this.hasPosChanged = true;
     }
 }
 
