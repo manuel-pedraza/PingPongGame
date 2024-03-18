@@ -174,13 +174,21 @@ io.on("connection", (socket) => {
     socket.on("createRoom", (room, name, points) => {
         // TODO: 
         //  - Add validations
-        //  - Make broadcast for those looking for a room
+
+        let lobby = lstLobbies.find(r => r.name === room);
+
+        if (lobby) {
+            socket.emit("errorCreatingRoom", "Room name already taken");
+            return;
+        }
 
         const resLobby = new Lobby({ name: room, host: name, points: points });
         lstLobbies.push(resLobby);
-        console.log(lstLobbies);
 
+        console.log(lstLobbies);
         console.log(`${socket.id} ${name} created room ${room}`);
+        
+        socket.user.state = userStates.waitingRoom;
         socket.join(room);
         socket.broadcast.to("requestRoomList").emit("newRoomCreated", resLobby);
         socket.emit("roomCreated", resLobby);
@@ -209,7 +217,7 @@ io.on("connection", (socket) => {
 
             console.log(lstLobbies);
 
-            socket.user.state = userStates.mainMenu;
+            socket.user.state = userStates.waitingRoom;
             socket.join(room);
 
             io.to(room).emit("opponentJoined", lobby);
@@ -236,6 +244,10 @@ io.on("connection", (socket) => {
     })
 
     socket.on("mainMenu", () => {
+
+        // TODO: 
+        // - Remove player if he was in the state of waitingRoom (others can join room)
+        // - Remove game if he was the host in the waitingRoom
 
         socket.user.state = userStates.mainMenu;
         socket.leave("requestRoomList");

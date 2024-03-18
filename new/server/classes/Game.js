@@ -1,5 +1,3 @@
-const Lobby  = require("./Lobby");
-
 class Game {
 
     constructor() {

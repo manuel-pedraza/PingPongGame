@@ -4,7 +4,7 @@ import { Inter } from 'next/font/google'
 import { useSocketContext } from '@/contexts/socketContext'
 import { AskName, AskRoomParams, CantConnectToServer, RoomListMenu, MainMenu, RoomLobby } from "@/components/MainMenuList";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 // var socket = undefined;
 
 const inter = Inter({ subsets: ['latin'] });
@@ -36,7 +36,7 @@ export default function Home() {
     )
   }
 
-  function getActualState() {
+  const  getActualState = useMemo(() =>  {
     // const connection = tryToConnect();
     console.log("STATE: ", state);
     switch (state) {
@@ -114,7 +114,7 @@ export default function Home() {
 
         return (<></>);
     }
-  }
+  }, [roomList, state, opponent, roomPoints, roomName])
 
   useEffect(() => {
     if (isConnected === false)
@@ -133,6 +133,9 @@ export default function Home() {
     socket.connect();
     // console.log(socket);
 
+    function EErrorCreatingRoom(args) {
+      alert(args);
+    }
 
     function EErrorAddingUser(args) {
       alert(args);
@@ -222,10 +225,12 @@ export default function Home() {
 
     function EGetRoomList(list) {
       setRoomList(list);
+      console.log("BIGL", list);
     }
 
 
     socket.on("errorAddingUser", EErrorAddingUser);
+    socket.on("errorCreatingRoom", EErrorCreatingRoom);
     socket.on("userCreated", EUserCreated);
     socket.on("roomCreated", ERoomCreated);
     socket.on("newRoomCreated", ENewRoomCreated);
@@ -242,6 +247,7 @@ export default function Home() {
 
     return () => {
       socket.off("errorAddingUser", EErrorAddingUser);
+      socket.off("errorCreatingRoom", EErrorCreatingRoom);
       socket.off("session", ESession);
       socket.off("userCreated", EUserCreated);
       socket.off("roomCreated", ERoomCreated);
@@ -257,7 +263,7 @@ export default function Home() {
     }
 
 
-  }, [socket]);
+  }, [socket, roomList]);
 
   return (
     <>
@@ -273,7 +279,7 @@ export default function Home() {
               <></>
           }
 
-          {getActualState()}
+          {getActualState}
         </div>
       </main>
     </>

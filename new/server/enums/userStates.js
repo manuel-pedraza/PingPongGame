@@ -3,7 +3,8 @@ const userStates = {
     roomList: "roomList",
     inGame: "inGame",
     mainMenu: "mainMenu",
-    inactive: "inactive"
+    inactive: "inactive",
+    waitingRoom: "waitingRoom"
 };
 
 module.exports = userStates;
