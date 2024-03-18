@@ -114,7 +114,7 @@ export default function Home() {
 
         return (<></>);
     }
-  }, [roomList, state, opponent, roomPoints, roomName])
+  }, [roomList, state, opponent, roomPoints, roomName, userName])
 
   useEffect(() => {
     if (isConnected === false)
@@ -154,6 +154,16 @@ export default function Home() {
 
     function EOpponentJoined(args) {
       setOpponent(args.opponent);
+    }
+
+    function EOpponentLeft(args) {
+      setOpponent(undefined);
+    }
+
+    function EGameCancelled(args) {
+      setState("roomListMenu");
+      socket.emit("requestRoomList");
+
     }
 
     function EUserCreated() {
@@ -238,12 +248,14 @@ export default function Home() {
     socket.on("errorJoiningRoom", EErrorJoiningRoom);
     socket.on("joinedRoomFromList", EJoinedRoomByList);
     socket.on("opponentJoined", EOpponentJoined);
+    socket.on("opponentLeft", EOpponentLeft);
+    socket.on("gameCancelled", EGameCancelled);
     socket.on("startedGame", EStartedGame);
     socket.on("session", ESession);
     socket.on("disconnect", EDisconnect)
     socket.on("connect", EConnected);
     socket.on("message_error", EMsgError);
-
+    
 
     return () => {
       socket.off("errorAddingUser", EErrorAddingUser);
@@ -256,6 +268,8 @@ export default function Home() {
       socket.off("errorJoiningRoom", EErrorJoiningRoom);
       socket.off("joinedRoomFromList", EJoinedRoomByList);
       socket.off("opponentJoined", EOpponentJoined);
+      socket.off("opponentLeft", EOpponentLeft);
+      socket.off("gameCancelled", EGameCancelled);
       socket.off("startedGame", EStartedGame);
       socket.off("disconnect", EDisconnect);
       socket.off("connect", EConnected);

@@ -100,6 +100,7 @@ io.on("connection", (socket) => {
     socket.on("addUser", (userToAdd) => {
 
         const userNotValid = userToAdd === "" || userToAdd === null;
+        console.log(userToAdd);
         if (userNotValid) {
             socket.emit("errorAddingUser", "User is not valid");
             return;
@@ -172,9 +173,6 @@ io.on("connection", (socket) => {
     });
 
     socket.on("createRoom", (room, name, points) => {
-        // TODO: 
-        //  - Add validations
-
         let lobby = lstLobbies.find(r => r.name === room);
 
         if (lobby) {
@@ -187,7 +185,7 @@ io.on("connection", (socket) => {
 
         console.log(lstLobbies);
         console.log(`${socket.id} ${name} created room ${room}`);
-        
+
         socket.user.state = userStates.waitingRoom;
         socket.join(room);
         socket.broadcast.to("requestRoomList").emit("newRoomCreated", resLobby);
@@ -222,6 +220,8 @@ io.on("connection", (socket) => {
 
             io.to(room).emit("opponentJoined", lobby);
             socket.emit("joinedRoomFromList", lobby);
+            socket.leave("requestRoomList");
+
 
         }
 
@@ -249,13 +249,37 @@ io.on("connection", (socket) => {
         // - Remove player if he was in the state of waitingRoom (others can join room)
         // - Remove game if he was the host in the waitingRoom
 
+        switch (socket.user.state) {
+            case userStates.waitingRoom:
+                const index = lstLobbies.findIndex(l => l.host === socket.user.name || l.opponent === socket.user.name);
+
+                if (index > -1) {
+                    let lobby = lstLobbies[index];
+
+                    if (lobby.host === socket.user.name) {
+                        socket.broadcast.to(lobby.name).emit("gameCancelled");
+                        io.socketsLeave(lobby.name);
+                        lstLobbies.splice(index, 1);
+                        
+                    } else {
+                        socket.leave(lobby.name);
+                        socket.broadcast.to(lobby.name).emit("opponentLeft");
+                        lstLobbies[index].opponent = undefined;
+
+                    }
+                }
+
+                break;
+
+            case userStates.roomList:
+                socket.leave("requestRoomList");
+
+                break;
+            default:
+                break;
+        }
+
         socket.user.state = userStates.mainMenu;
-        socket.leave("requestRoomList");
-
-        const index = lstLobbies.findIndex(l => l.host === socket.user.name);
-
-        if (index > -1)
-            lstLobbies.splice(index, 1);
 
     });
 
@@ -293,7 +317,7 @@ io.on("connection", (socket) => {
             console.log("GAME CAN START");
 
             games.set(name, game);
-            io.to(name).emit("gameCanStart", {host: lobbyTmp.host, opponent: lobbyTmp.opponent, points: lobbyTmp.points});
+            io.to(name).emit("gameCanStart", { host: lobbyTmp.host, opponent: lobbyTmp.opponent, points: lobbyTmp.points });
 
         }
 
