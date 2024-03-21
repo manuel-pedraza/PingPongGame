@@ -22,4 +22,11 @@ export default class Player extends Actor {
         this.ctx.fill();
     }
 
+    updatePos(x, y){
+        const distance = Math.abs(this.y - y);
+        const sign = Math.sign(this.y - y) * (-1);
+        let newY = (distance > this.speed ? this.speed : distance) * sign;
+        super.updatePos(x, this.y + newY);
+    }
+
 }

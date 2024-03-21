@@ -245,10 +245,6 @@ io.on("connection", (socket) => {
 
     socket.on("mainMenu", () => {
 
-        // TODO: 
-        // - Remove player if he was in the state of waitingRoom (others can join room)
-        // - Remove game if he was the host in the waitingRoom
-
         switch (socket.user.state) {
             case userStates.waitingRoom:
                 const index = lstLobbies.findIndex(l => l.host === socket.user.name || l.opponent === socket.user.name);
@@ -334,7 +330,7 @@ io.on("connection", (socket) => {
             if (!game.hasGameEnded && (game.hasPosChanged || game.havePointsChanged)) {
 
                 /*
-                OPTIONAL: Implement sending some data and not ALL the data. Help with some performence
+                OPTIONAL: Implement sending some data and not ALL the data. Help with some performence IG
                 const positions =  {};
                 const points = game.havePointsChanged ? {hostPoints: game.hostPoints, opponentPoints: } : {};
                 const game = {};
@@ -360,6 +356,7 @@ io.on("connection", (socket) => {
 
         let game = games.get(roomName);
 
+        // TODO: Validate request socket is the host socket or the opponnent socket
         if (!socket.rooms.has(roomName) || !game) return;
 
         const isHost = game.hostSocket === socket.id;

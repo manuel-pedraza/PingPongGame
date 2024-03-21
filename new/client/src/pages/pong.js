@@ -2,6 +2,7 @@ import Actor from '@/classes/pongGame/Actor';
 import Ball from '@/classes/pongGame/Ball';
 import Player from '@/classes/pongGame/Player';
 import { socket } from "@/classes/socket";
+import { SP } from 'next/dist/shared/lib/utils';
 import { useRouter } from 'next/router';
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -86,24 +87,43 @@ export default function Pong() {
         let frameCount = 0;
         let animationFrameId;
         let actors = undefined;
+        let playerControl = undefined;
+
+
+        let newYPos = undefined;
+
+        setInterval(() => {
+
+            let p = actors.get(playerControl);
+
+            if (newYPos !== p.y) {
+                // const speed = Math.abs(p.y - e.y);
+                // p.speedQueue.enqueue(speed);
+
+                if (lobby) {
+                    console.log(newYPos);
+                    socket.emit("EPong", lobby.lobbyName, { event: "mouseMove", value: newYPos });
+                }
+
+                p.updatePos(p.x, newYPos);
+            }
+
+        }, 15);
 
         function EOnMouseMove(e) {
-
-            let playerControl = lobby && (!lobby.isHost || lobby.isHost === false) ? "p2" : "p1";
-
             // console.log("lON", lobby);
 
             let p = actors.get(playerControl);
+
 
             if (p) {
                 // const speed = Math.abs(p.y - e.y);
                 // p.speedQueue.enqueue(speed);
 
-                if (lobby) {
-                    socket.emit("EPong", lobby.lobbyName, { event: "mouseMove", value: e.y });
-                }
+                if (isNaN(p.y))
+                    p.y = e.y;
 
-                p.updatePos(p.x, e.y);
+                newYPos = e.y;
             }
         }
 
@@ -114,10 +134,18 @@ export default function Pong() {
             let player2 = new Player("p2", context, devicePixelRatio, canvas.width * 0.95, context.canvas.height * 0.5);
             let ball = new Ball(context, canvas.width / 2, canvas.height / 2);
 
+            const SPEED = 12;
+
+            player1.speed = SPEED;
+            player2.speed = SPEED;
+
             actors = new Map();
             actors.set("p1", player1);
             actors.set("p2", player2);
             actors.set("ball", ball);
+
+
+            playerControl = lobby && (!lobby.isHost || lobby.isHost === false) ? "p2" : "p1";
 
         }
 
@@ -163,20 +191,26 @@ export default function Pong() {
                 }
 
             }
-            
-            // console.log("S", game.current);
-            if(lobby && game.current && game.current !== null){
 
-                console.log(game.current);
+            // console.log("S", game.current);
+            if (lobby && game.current && game.current !== null) {
+
+                // console.log(game.current);
 
                 let host = actors.get("p1");
                 let opp = actors.get("p2");
 
-                host.updatePos(host.x, game.current.hostPos);
-                host.points = game.current.hostPoints;
+                if (game.current.hostPos !== null)
+                    host.y = game.current.hostPos;
 
-                opp.updatePos(opp.x, game.current.opponentPos);
-                opp.points = game.current.opponentPoints;
+                if (game.current.hostPoints !== null)
+                    host.points = game.current.hostPoints;
+
+                if (game.current.opponentPos !== null)
+                    opp.y = game.current.opponentPos;
+
+                if (game.current.opponentPoints !== null)
+                    opp.points = game.current.opponentPoints;
 
                 game.current = null;
             }

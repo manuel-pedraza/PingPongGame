@@ -4,6 +4,7 @@ export default class Actor {
         this.y = y;
         this.ctx = ctx;
         this.devicePixelRatio = devicePixelRatio;
+        this.speed = 1;
     }
 
     draw() {
