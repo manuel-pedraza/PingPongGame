@@ -7,7 +7,8 @@ class Game {
         this.opponentSocket = undefined;
         this.havePointsChanged = false;
         this.hasPosChanged = false;
-
+        this.hostSeq = 0;
+        this.oppSeq = 0;
         this.hasGameEnded = false;
         this.hostPos = undefined;
         this.opponentPos = undefined;
@@ -47,7 +48,16 @@ class Game {
     }
 
     changePos(isHost, newY) {
-        if (isHost)
+
+        const posToTreat = isHost === isHost ? this.hostPos : this.opponentPos;
+
+        if(!isNaN(posToTreat)){
+            const distance = Math.abs(posToTreat - newY);
+            const sign = Math.sign(posToTreat - newY) * (-1);
+            newY = (distance > PLAYER_SPEED ? PLAYER_SPEED : distance) * sign;
+        }
+
+        if (isHost === true)
             this.changeHostPos(newY);
         else
             this.changeOppPos(newY);
@@ -57,13 +67,9 @@ class Game {
         if (newY === this.hostPos) return;
 
         if (isNaN(this.hostPos)){
-            console.log("WAS NOT A NUMBER");
             this.hostPos = newY;
         }
         else {
-            const distance = Math.abs(this.hostPos - newY);
-            const sign = Math.sign(this.hostPos - newY) * (-1);
-            newY = (distance > PLAYER_SPEED ? PLAYER_SPEED : distance) * sign;
             this.hostPos += newY;
         }
         this.hasPosChanged = true;
@@ -73,13 +79,9 @@ class Game {
         if (newY === this.opponentPos) return;
 
         if (isNaN(this.opponentPos)){
-            console.log("WAS NOT A NUMBER");
             this.opponentPos = newY;
         }
         else {
-            const distance = Math.abs(this.opponentPos - newY);
-            const sign = Math.sign(this.opponentPos - newY) * (-1);
-            newY = (distance > PLAYER_SPEED ? PLAYER_SPEED : distance) * sign;
             this.opponentPos += newY;
         }
         this.hasPosChanged = true;

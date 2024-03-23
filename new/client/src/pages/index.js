@@ -36,7 +36,7 @@ export default function Home() {
     )
   }
 
-  const  getActualState = useMemo(() =>  {
+  const getActualState = useMemo(() => {
     // const connection = tryToConnect();
     console.log("STATE: ", state);
     switch (state) {
@@ -78,7 +78,7 @@ export default function Home() {
           roomPointsOnChangeEvent={(e) => {
             setRoomPoints(e.target.value ? e.target.value : 10);
           }}
-          
+
 
           createRoomOnClickEvent={(e) => {
             socket.emit("createRoom", roomName, userName, roomPoints);
@@ -126,11 +126,20 @@ export default function Home() {
   useEffect(() => {
     const sessionID = localStorage.getItem("sessionID");
 
+
     if (sessionID) {
       socket.auth = { sessionID };
     }
 
-    socket.connect();
+    const intervalIsNotConnected = () => {
+      console.log("C", socket.connected);
+      if (socket.connected === false) {
+        setIsConnected(socket.connected);
+        setState("cantConnectToServer");
+      }
+    };
+
+    setInterval(intervalIsNotConnected, 120000);
     // console.log(socket);
 
     function EErrorCreatingRoom(args) {
@@ -238,6 +247,15 @@ export default function Home() {
       console.log("BIGL", list);
     }
 
+    function WEOnload(e) {
+      socket.connect();
+    }
+
+    if (document.readyState === "complete")
+      WEOnload();
+    else
+      window.addEventListener("load", WEOnload);
+
 
     socket.on("errorAddingUser", EErrorAddingUser);
     socket.on("errorCreatingRoom", EErrorCreatingRoom);
@@ -255,9 +273,12 @@ export default function Home() {
     socket.on("disconnect", EDisconnect)
     socket.on("connect", EConnected);
     socket.on("message_error", EMsgError);
-    
+
 
     return () => {
+      window.removeEventListener("load", WEOnload);
+      clearInterval(intervalIsNotConnected);
+
       socket.off("errorAddingUser", EErrorAddingUser);
       socket.off("errorCreatingRoom", EErrorCreatingRoom);
       socket.off("session", ESession);

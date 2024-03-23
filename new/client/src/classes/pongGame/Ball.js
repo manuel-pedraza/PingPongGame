@@ -1,8 +1,8 @@
 const { default: Actor } = require("./Actor");
 
 export default class Ball extends Actor {
-    constructor(ctx, x, y) {
-        super(ctx, x, y);
+    constructor(ctx, devicePixelRatio, x, y) {
+        super(ctx, devicePixelRatio, x, y);
         this.angle = undefined;
         this.ballSize = 30;
         this.direction = null;
@@ -94,8 +94,8 @@ export default class Ball extends Actor {
             this.x = (this.player.x + this.player.width / 2 * xPivot) + this.ballSize / 2 * xPivot;
             this.y = newY;
 
-            const newSpeed = this.player.avgSpeed * 2;
-            this.speed = newSpeed > 16 ? 16 : newSpeed < 5.5 ? 5.5 : newSpeed;
+            // const newSpeed = this.player.avgSpeed * 2;
+            // this.speed = newSpeed > 16 ? 16 : newSpeed < 5.5 ? 5.5 : newSpeed;
 
             this.setNewDirection();
             this.player = undefined;

@@ -256,7 +256,7 @@ io.on("connection", (socket) => {
                         socket.broadcast.to(lobby.name).emit("gameCancelled");
                         io.socketsLeave(lobby.name);
                         lstLobbies.splice(index, 1);
-                        
+
                     } else {
                         socket.leave(lobby.name);
                         socket.broadcast.to(lobby.name).emit("opponentLeft");
@@ -341,18 +341,18 @@ io.on("connection", (socket) => {
                     opponentPos: game.opponentPos,
                     hostPoints: game.hostPoints,
                     opponentPoints: game.opponentPoints,
+                    hostSeq: game.hostSeq,
+                    oppSeq: game.oppSeq
                 });;
 
                 game.resetChangedProps();
             }
-
-
         });
 
     }, 15);
 
 
-    socket.on("EPong", (roomName, { event, value, }) => {
+    socket.on("EPong", (roomName, { event, value, }, sequenceNumber) => {
 
         let game = games.get(roomName);
 
@@ -360,6 +360,11 @@ io.on("connection", (socket) => {
         if (!socket.rooms.has(roomName) || !game) return;
 
         const isHost = game.hostSocket === socket.id;
+
+        if (isHost)
+            game.hostSeq = sequenceNumber;
+        else
+            game.oppSeq = sequenceNumber;
 
         switch (event) {
             case "mouseMove":

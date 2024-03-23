@@ -8,7 +8,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 export default function Pong() {
 
-    const [lobby, setLobby] = useState(undefined);
+    // const [lobby, setLobby] = useState(undefined);
+    const lobby = useRef(undefined);
     const [isConnected, setIsConnected] = useState(undefined);
     // const [game, setGame] = useState(undefined);
     const [gameHasStarted, setGameHasStarted] = useState(false);
@@ -58,16 +59,16 @@ export default function Pong() {
 
         if (!recievedLobby || !recievedLobby.isHost && !recievedLobby.lobbyName
         ) {
-            setLobby(undefined);
+            lobby.current = undefined;
             return
         }
 
-        let lobby = {
-            isHost: recievedLobby.isHost ? recievedLobby.isHost : false,
+        let lobbyTmp = {
+            isHost: recievedLobby.isHost == "true",
             lobbyName: recievedLobby.lobbyName,
         };
 
-        setLobby(lobby)
+        lobby.current = lobbyTmp;
 
         // console.log("RL", recievedLobby);
         // console.log("LOBBY:", lobby);
@@ -88,24 +89,32 @@ export default function Pong() {
         let animationFrameId;
         let actors = undefined;
         let playerControl = undefined;
-
-
+        let sequenceNumber = 0;
+        let playerInputs = [];
         let newYPos = undefined;
+
+        let test = true;
 
         setInterval(() => {
 
             let p = actors.get(playerControl);
 
-            if (newYPos !== p.y) {
+            if (newYPos && newYPos !== p.y) {
                 // const speed = Math.abs(p.y - e.y);
                 // p.speedQueue.enqueue(speed);
+                const oldPos = p.y;
+                p.updatePos(p.x, newYPos);
 
-                if (lobby) {
-                    console.log(newYPos);
-                    socket.emit("EPong", lobby.lobbyName, { event: "mouseMove", value: newYPos });
+                // console.log("L", lobby.current);
+                if (lobby.current) {
+                    console.log("NEWP:", newYPos);
+                    sequenceNumber++;
+                    console.log("PO:", oldPos);
+                    console.log("PN:", p.y);
+                    playerInputs.push({ sequenceNumber, pos: (p.y - oldPos) });
+                    socket.emit("EPong", lobby.current.lobbyName, { event: "mouseMove", value: newYPos }, sequenceNumber);
                 }
 
-                p.updatePos(p.x, newYPos);
             }
 
         }, 15);
@@ -115,13 +124,13 @@ export default function Pong() {
 
             let p = actors.get(playerControl);
 
-
             if (p) {
                 // const speed = Math.abs(p.y - e.y);
                 // p.speedQueue.enqueue(speed);
 
-                if (isNaN(p.y))
+                if (isNaN(p.y)){
                     p.y = e.y;
+                }
 
                 newYPos = e.y;
             }
@@ -130,9 +139,12 @@ export default function Pong() {
         canvas.addEventListener("mousemove", EOnMouseMove);
 
         function initPong() {
-            let player1 = new Player("p1", context, devicePixelRatio, canvas.width * 0.05, context.canvas.height * 0.5);
-            let player2 = new Player("p2", context, devicePixelRatio, canvas.width * 0.95, context.canvas.height * 0.5);
-            let ball = new Ball(context, canvas.width / 2, canvas.height / 2);
+            let player1 = new Player("p1", context, devicePixelRatio, canvas.width * 0.05, canvas.height * 0.5);
+            let player2 = new Player("p2", context, devicePixelRatio, canvas.width * 0.95, canvas.height * 0.5);
+            const ballX = canvas.width / 2;
+            const ballY = canvas.height / 2;
+
+            let ball = new Ball(context, devicePixelRatio, ballX, ballY);
 
             const SPEED = 12;
 
@@ -145,7 +157,7 @@ export default function Pong() {
             actors.set("ball", ball);
 
 
-            playerControl = lobby && (!lobby.isHost || lobby.isHost === false) ? "p2" : "p1";
+            playerControl = lobby.current && !lobby.current.isHost ? "p2" : "p1";
 
         }
 
@@ -192,10 +204,10 @@ export default function Pong() {
 
             }
 
-            // console.log("S", game.current);
-            if (lobby && game.current && game.current !== null) {
+            // THIS IS TO UPDATE THE PLAYER MOVEMENTS
+            if (lobby.current && game.current && game.current !== null) {
+                console.log(game.current);
 
-                // console.log(game.current);
 
                 let host = actors.get("p1");
                 let opp = actors.get("p2");
@@ -212,13 +224,36 @@ export default function Pong() {
                 if (game.current.opponentPoints !== null)
                     opp.points = game.current.opponentPoints;
 
+                const lastServerInputIndex = playerInputs.findIndex(i => {
+                    const playerSeq = lobby.current.isHost === true ? game.current.hostSeq : game.current.oppSeq;
+                    return playerSeq === i.sequenceNumber;
+                });
+
+                if (lastServerInputIndex > -1)
+                    playerInputs.splice(0, lastServerInputIndex);
+
+                // console.log("PI: ", playerInputs);
+                playerInputs.forEach(i => {
+                    // console.log("Inp: ", i);
+                    if (lobby.current.isHost === true)
+                        host.y += i.pos;
+                    else
+                        opp.y += i.pos;
+                })
+
                 game.current = null;
             }
 
             // Draw actors
             actors.forEach(a => {
+                if(frameCount <= 2){
+                    console.log(frameCount);
+                    console.log(a);
+                }
+                
                 a.draw();
             });
+            test = false;
 
             // Draw Points
             const p1p = actors.get("p1").points;
@@ -246,7 +281,7 @@ export default function Pong() {
     useEffect(() => {
 
         console.log("l", lobby);
-        if (!lobby) return;
+        if (!lobby.current) return;
 
         // Socket
         const sessionID = localStorage.getItem("sessionID");
@@ -261,7 +296,7 @@ export default function Pong() {
             socket.connect();
         else {
             if (gameHasStarted === false) {
-                socket.emit("playerConnected", lobby);
+                socket.emit("playerConnected", lobby.current);
             }
         }
 
@@ -276,7 +311,7 @@ export default function Pong() {
             }
 
             console.log("playerConnected");
-            socket.emit("playerConnected", lobby);
+            socket.emit("playerConnected", lobby.current);
 
             // setState("name");
             setIsConnected(socket.connected);
@@ -336,13 +371,13 @@ export default function Pong() {
             socket.off("connect", EConnected);
         }
 
-    }, [socket, lobby])
+    }, [socket])
 
     return (
         <>
             <div style={{ margin: "0", padding: "0", position: "relative" }}>
 
-                {!lobby ?
+                {!lobby.current ?
                     <></>
                     :
                     gameHasStarted === false ?

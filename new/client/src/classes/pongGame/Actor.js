@@ -1,5 +1,6 @@
 export default class Actor {
     constructor(ctx, devicePixelRatio, x, y) {
+        console.log("Y", y);
         this.x = x;
         this.y = y;
         this.ctx = ctx;
