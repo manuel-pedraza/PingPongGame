@@ -49,7 +49,7 @@ class Game {
 
     changePos(isHost, newY) {
 
-        const posToTreat = isHost === isHost ? this.hostPos : this.opponentPos;
+        const posToTreat = isHost === true ? this.hostPos : this.opponentPos;
 
         if(!isNaN(posToTreat)){
             const distance = Math.abs(posToTreat - newY);

@@ -297,8 +297,8 @@ io.on("connection", (socket) => {
         // socket.join(name);
         let lobbyTmp = lstLobbies[index];
         let game = games.get(name);
-
-        if (lobby.isHost === "true") {
+        
+        if (lobby.isHost === true) {
             game.hostSocket = socket.id;
         }
         else {
@@ -370,7 +370,6 @@ io.on("connection", (socket) => {
             case "mouseMove":
                 game.changePos(isHost, value);
                 break;
-
             default:
                 break;
         }

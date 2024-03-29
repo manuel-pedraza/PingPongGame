@@ -92,11 +92,11 @@ export default function Pong() {
         let sequenceNumber = 0;
         let playerInputs = [];
         let newYPos = undefined;
+        const SPEED = 12;
 
         let test = true;
 
-        setInterval(() => {
-
+        function gameLoopInterval() {
             let p = actors.get(playerControl);
 
             if (newYPos && newYPos !== p.y) {
@@ -106,18 +106,23 @@ export default function Pong() {
                 p.updatePos(p.x, newYPos);
 
                 // console.log("L", lobby.current);
+                //  
                 if (lobby.current) {
-                    console.log("NEWP:", newYPos);
+                    console.log(playerControl, newYPos);
                     sequenceNumber++;
-                    console.log("PO:", oldPos);
-                    console.log("PN:", p.y);
-                    playerInputs.push({ sequenceNumber, pos: (p.y - oldPos) });
+                    // console.log("NEWP:", newYPos);
+                    // console.log("PO:", oldPos);
+                    // console.log("PN:", p.y);
+                    const diff = (p.y - oldPos);
+                    playerInputs.push({ sequenceNumber, pos: diff});
                     socket.emit("EPong", lobby.current.lobbyName, { event: "mouseMove", value: newYPos }, sequenceNumber);
                 }
 
             }
+        };
 
-        }, 15);
+
+        setInterval(gameLoopInterval, 15);
 
         function EOnMouseMove(e) {
             // console.log("lON", lobby);
@@ -146,7 +151,6 @@ export default function Pong() {
 
             let ball = new Ball(context, devicePixelRatio, ballX, ballY);
 
-            const SPEED = 12;
 
             player1.speed = SPEED;
             player2.speed = SPEED;
@@ -206,7 +210,7 @@ export default function Pong() {
 
             // THIS IS TO UPDATE THE PLAYER MOVEMENTS
             if (lobby.current && game.current && game.current !== null) {
-                console.log(game.current);
+                // console.log(game.current);
 
 
                 let host = actors.get("p1");
@@ -230,7 +234,7 @@ export default function Pong() {
                 });
 
                 if (lastServerInputIndex > -1)
-                    playerInputs.splice(0, lastServerInputIndex);
+                    playerInputs.splice(0, lastServerInputIndex + 1);
 
                 // console.log("PI: ", playerInputs);
                 playerInputs.forEach(i => {
@@ -240,6 +244,8 @@ export default function Pong() {
                     else
                         opp.y += i.pos;
                 })
+
+                // playerInputs = [];
 
                 game.current = null;
             }
@@ -271,6 +277,7 @@ export default function Pong() {
         render();
 
         return () => {
+            clearInterval(gameLoopInterval);
             window.cancelAnimationFrame(animationFrameId);
             canvas.removeEventListener("mousemove", EOnMouseMove)
         }
@@ -320,7 +327,7 @@ export default function Pong() {
         function EUpdatePlayers(e) {
             const { hostPos, opponentPos, hostPoints, opponentPoints } = e;
 
-            console.log("E", e);
+            // console.log("E", e);
             game.current = e;
 
         }

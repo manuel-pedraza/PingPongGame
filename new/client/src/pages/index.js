@@ -132,14 +132,13 @@ export default function Home() {
     }
 
     const intervalIsNotConnected = () => {
-      console.log("C", socket.connected);
       if (socket.connected === false) {
         setIsConnected(socket.connected);
         setState("cantConnectToServer");
       }
     };
 
-    setInterval(intervalIsNotConnected, 120000);
+    setInterval(intervalIsNotConnected, 12000);
     // console.log(socket);
 
     function EErrorCreatingRoom(args) {
@@ -244,7 +243,6 @@ export default function Home() {
 
     function EGetRoomList(list) {
       setRoomList(list);
-      console.log("BIGL", list);
     }
 
     function WEOnload(e) {
