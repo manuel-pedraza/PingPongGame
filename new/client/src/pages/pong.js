@@ -1,10 +1,11 @@
 import Actor from '@/classes/pongGame/Actor';
+import gsap from "gsap";
 import Ball from '@/classes/pongGame/Ball';
 import Player from '@/classes/pongGame/Player';
 import { socket } from "@/classes/socket";
 import { SP } from 'next/dist/shared/lib/utils';
 import { useRouter } from 'next/router';
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { act, useEffect, useMemo, useRef, useState } from 'react'
 
 export default function Pong() {
 
@@ -92,18 +93,24 @@ export default function Pong() {
         let sequenceNumber = 0;
         let playerInputs = [];
         let newYPos = undefined;
+        let otherPlayerNewPos = undefined;
+        let interpolationFrame = 0;
+        let interpolationSpeed = 0;
         const SPEED = 12;
 
-        let test = true;
+        let ball = undefined;
+        let host = undefined;
+        let opp = undefined;
+        // let currentPlayer = undefined;
+        // let otherPlayer = undefined;
 
         function gameLoopInterval() {
-            let p = actors.get(playerControl);
-
-            if (newYPos && newYPos !== p.y) {
+            let currentPlayer = actors.get(playerControl);
+            if (newYPos && newYPos !== currentPlayer.y) {
                 // const speed = Math.abs(p.y - e.y);
                 // p.speedQueue.enqueue(speed);
-                const oldPos = p.y;
-                p.updatePos(p.x, newYPos);
+                const oldPos = currentPlayer.y;
+                currentPlayer.updatePos(currentPlayer.x, newYPos);
 
                 // console.log("L", lobby.current);
                 //  
@@ -113,8 +120,8 @@ export default function Pong() {
                     // console.log("NEWP:", newYPos);
                     // console.log("PO:", oldPos);
                     // console.log("PN:", p.y);
-                    const diff = (p.y - oldPos);
-                    playerInputs.push({ sequenceNumber, pos: diff});
+                    const diff = (currentPlayer.y - oldPos);
+                    playerInputs.push({ sequenceNumber, pos: diff });
                     socket.emit("EPong", lobby.current.lobbyName, { event: "mouseMove", value: newYPos }, sequenceNumber);
                 }
 
@@ -125,16 +132,13 @@ export default function Pong() {
         setInterval(gameLoopInterval, 15);
 
         function EOnMouseMove(e) {
-            // console.log("lON", lobby);
-
-            let p = actors.get(playerControl);
-
-            if (p) {
+            let currentPlayer = actors.get(playerControl);
+            if (currentPlayer) {
                 // const speed = Math.abs(p.y - e.y);
                 // p.speedQueue.enqueue(speed);
 
-                if (isNaN(p.y)){
-                    p.y = e.y;
+                if (isNaN(currentPlayer.y)) {
+                    currentPlayer.y = e.y;
                 }
 
                 newYPos = e.y;
@@ -149,20 +153,18 @@ export default function Pong() {
             const ballX = canvas.width / 2;
             const ballY = canvas.height / 2;
 
-            let ball = new Ball(context, devicePixelRatio, ballX, ballY);
-
-
             player1.speed = SPEED;
             player2.speed = SPEED;
 
             actors = new Map();
             actors.set("p1", player1);
             actors.set("p2", player2);
-            actors.set("ball", ball);
-
+            actors.set("ball", new Ball(context, devicePixelRatio, ballX, ballY));
+            ball = actors.get("ball");
+            host = actors.get("p1");
+            opp = actors.get("p2");
 
             playerControl = lobby.current && !lobby.current.isHost ? "p2" : "p1";
-
         }
 
         let ballColor = 0;
@@ -175,7 +177,6 @@ export default function Pong() {
             drawMiddleLine();
 
             // Update Ball new Pos
-            let ball = actors.get("ball");
             if (ball) {
 
                 if (!ball.player && ball.direction !== null) {
@@ -208,22 +209,28 @@ export default function Pong() {
 
             }
 
+            let currentPlayer = actors.get(playerControl);
+            let otherPlayer = playerControl === "p1" ? actors.get("p2") : actors.get("p1");
+
             // THIS IS TO UPDATE THE PLAYER MOVEMENTS
             if (lobby.current && game.current && game.current !== null) {
                 // console.log(game.current);
 
-
-                let host = actors.get("p1");
-                let opp = actors.get("p2");
-
-                if (game.current.hostPos !== null)
-                    host.y = game.current.hostPos;
+                // Player Interpolation
+                // && host.y !== game.current.hostPos
+                if (game.current.hostPos !== null && game.current.opponentPos !== null) {
+                    if (lobby.current.isHost === true) {
+                        currentPlayer.y = game.current.hostPos;
+                        otherPlayerNewPos = game.current.opponentPos;
+                    }
+                    else {
+                        currentPlayer.y = game.current.opponentPos;
+                        otherPlayerNewPos = game.current.hostPos;
+                    }
+                }
 
                 if (game.current.hostPoints !== null)
                     host.points = game.current.hostPoints;
-
-                if (game.current.opponentPos !== null)
-                    opp.y = game.current.opponentPos;
 
                 if (game.current.opponentPoints !== null)
                     opp.points = game.current.opponentPoints;
@@ -238,28 +245,61 @@ export default function Pong() {
 
                 // console.log("PI: ", playerInputs);
                 playerInputs.forEach(i => {
-                    // console.log("Inp: ", i);
-                    if (lobby.current.isHost === true)
-                        host.y += i.pos;
-                    else
-                        opp.y += i.pos;
+                    console.log("CP", currentPlayer);
+                    
+                    currentPlayer.y += i.pos;
                 })
 
-                // playerInputs = [];
+
+                
+                if (!isNaN(otherPlayer.y) && otherPlayer.y !== otherPlayerNewPos) {
+                    console.log("iif", interpolationSpeed, otherPlayer, otherPlayerNewPos);
+                    
+                    interpolationFrame = 0;
+                    interpolationSpeed = (otherPlayerNewPos - otherPlayer.y) / 5;
+
+                    if(interpolationSpeed > SPEED)
+                       interpolationSpeed = SPEED 
+                    else if(interpolationSpeed < SPEED * -1)
+                        interpolationSpeed = SPEED * -1
+
+                    otherPlayerNewPos = undefined;
+                }else        
+                    otherPlayer.y = otherPlayerNewPos;
 
                 game.current = null;
+
+
+            } else {
+                // TODO: IA in solo play
+                // use otherPlayer.y property
             }
+
+
+            if (lobby.current && interpolationFrame < 15 && otherPlayer.y !== otherPlayerNewPos) {
+                otherPlayer.y += interpolationSpeed;
+                interpolationFrame += 3;
+            }
+
+
+            // Fix players out of bounds
+            /*
+            if (currentPlayer.y > canvas.height)
+                currentPlayer.y = canvas.height;
+            else if (currentPlayer.y < 0)
+                currentPlayer.y = 0;
+
+            if (otherPlayer.y > canvas.height)
+                otherPlayer.y = canvas.height;
+            else if (otherPlayer.y < 0)
+                otherPlayer.y = 0;
+            */
 
             // Draw actors
             actors.forEach(a => {
-                if(frameCount <= 2){
-                    console.log(frameCount);
-                    console.log(a);
-                }
-                
                 a.draw();
             });
-            test = false;
+
 
             // Draw Points
             const p1p = actors.get("p1").points;

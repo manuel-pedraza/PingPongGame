@@ -343,7 +343,7 @@ io.on("connection", (socket) => {
                     opponentPoints: game.opponentPoints,
                     hostSeq: game.hostSeq,
                     oppSeq: game.oppSeq
-                });;
+                });
 
                 game.resetChangedProps();
             }

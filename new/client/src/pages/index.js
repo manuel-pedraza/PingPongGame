@@ -304,7 +304,7 @@ export default function Home() {
       </Head>
       <main>
         <div>
-          <h1 >Hello there</h1>
+          <h1>Hello there</h1>
           {
             !(state === "name" || state === "cantConnectToServer") && userName !== undefined ?
               <h2>{userName}</h2>
