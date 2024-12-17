@@ -1,55 +1,51 @@
-const PLAYER_SPEED = 12;
+const Ball = require("./Ball");
+const PlayerConsts = require("./Consts")
+
+const PLAYER_SPEED = PlayerConsts.maxSpeed();
 class Game {
 
     constructor() {
-
         this.hostSocket = undefined;
         this.opponentSocket = undefined;
-        this.havePointsChanged = false;
+        // this.havePointsChanged = false;
         this.hasPosChanged = false;
+        this.hasStarted = false;
+        this.hasEnded = false;
+        this.turn = true;
         this.hostSeq = 0;
         this.oppSeq = 0;
-        this.hasGameEnded = false;
         this.hostPos = undefined;
         this.opponentPos = undefined;
         this.hostPoints = 0;
         this.opponentPoints = 0;
-        this.ball = { x: 0, y: 0 };
+        this.maxPoints = 0;
+        this.ball = undefined;
+        this.arena = undefined;
     }
 
-    lookForEndGame(points) {
-        this.hasGameEnded = this.hostPoints >= points || this.opponentPoints >= points;
-        return this.hasGameEnded;
+    lookForEndGame() {
+        this.hasEnded = this.hostPoints >= this.maxPoints || this.opponentPoints >= this.maxPoints;
+        return this.hasEnded;
     }
 
     resetChangedProps() {
         this.hasPosChanged = false;
-        this.havePointsChanged = false;
+        // this.havePointsChanged = false;
     }
-
-    addHostPoint() {
-        this.hostPoints++;
-        this.lookForEndGame();
-        this.havePointsChanged = true;
-    }
-
-    addOpponentPoint() {
-        this.opponentPoints++;
-        this.lookForEndGame();
-        this.havePointsChanged = true;
-    }
-
 
     addPoint(isHost) {
         if (isHost)
-            this.addHostPoint();
+            this.hostPoints++;
         else
-            this.addOpponentPoint();
+            this.opponentPoints++;
+        this.lookForEndGame();
+        // this.havePointsChanged = true;
+
     }
 
     changePos(isHost, newY) {
 
-        const posToTreat = isHost === true ? this.hostPos : this.opponentPos;
+        const posToTreat = isHost === true ? this.hostPos.y : this.opponentPos.y;
 
         if(!isNaN(posToTreat)){
             const distance = Math.abs(posToTreat - newY);
@@ -64,27 +60,72 @@ class Game {
     }
 
     changeHostPos(newY) {
-        if (newY === this.hostPos) return;
+        if (newY === this.hostPos.y) return;
 
-        if (isNaN(this.hostPos)){
-            this.hostPos = newY;
+        if (isNaN(this.hostPos.y)){
+            this.hostPos.y = newY;
         }
         else {
-            this.hostPos += newY;
+            this.hostPos.y += newY;
         }
         this.hasPosChanged = true;
     }
 
     changeOppPos(newY) {
-        if (newY === this.opponentPos) return;
+        if (newY === this.opponentPos.y) return;
 
-        if (isNaN(this.opponentPos)){
-            this.opponentPos = newY;
+        if (isNaN(this.opponentPos.y)){
+            this.opponentPos.y = newY;
         }
         else {
-            this.opponentPos += newY;
+            this.opponentPos.y += newY;
         }
         this.hasPosChanged = true;
+    }
+
+    start(){
+        this.hasStarted  = true;
+        this.hostPos     = {x: this.arena.x * 0.05};
+        this.opponentPos = {x: this.arena.x * 0.95};
+        
+        this.changeHostPos(this.arena.y * 0.5);
+        this.changeOppPos(this.arena.y * 0.5);
+    }
+
+    ballLoop(){
+        //Ball Logic
+        if (!this.ball.player && this.ball.direction !== null) {
+            this.ball.player = this.ball.direction === true ? this.hostPos : this.opponentPos;
+            this.ball.setNewDirection();
+        }
+
+        if (this.ball.direction === null) {
+            this.ball.direction = this.turn;
+            this.ball.setNewDirection();
+
+        } else {
+            this.ball.updatePos();
+            
+            if (this.ball.isOutOfBounds(this.arena.x)) {
+                console.log("OOB | X", this.ball.x, "Y", this.ball.y, "T", this.turn, this.ball.direction);
+                this.addPoint(!this.turn);
+                this.turn = !this.turn;
+                this.ball.reset(this.arena);
+            }
+        }
+    }
+
+    setArena(arena){
+        this.arena = arena;
+        this.setBall();
+    }
+
+    setBall(){
+        this.ball = new Ball(this.arena.x / 2, this.arena.y / 2);
+    }
+
+    getBallObject(){
+        return this.ball.toObject();
     }
 }
 

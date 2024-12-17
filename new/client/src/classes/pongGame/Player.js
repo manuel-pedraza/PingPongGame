@@ -13,7 +13,11 @@ export default class Player extends Actor {
     draw() {
         this.ctx.fillStyle = '#fff';
         // ctx.fillRect(200, 200, 100, 100);
-        this.ctx.fillRect(this.x - (this.width / 2), this.y - (this.height / 2), this.width, this.height);
+        this.ctx.fillRect(
+            this.x - (this.width / 2) * this.devicePixelRatio, 
+            this.y - (this.height / 2) * this.devicePixelRatio, 
+            this.width * this.devicePixelRatio, this.height * this.devicePixelRatio
+        );
         this.ctx.fill();
     }
 
@@ -21,9 +25,6 @@ export default class Player extends Actor {
         const distance = Math.abs(this.y - y);
         const sign = Math.sign(this.y - y) * (-1);
         let newY = (distance > this.speed ? this.speed : distance) * sign;
-
-
-        
         super.updatePos(x, this.y + newY);
     }
 

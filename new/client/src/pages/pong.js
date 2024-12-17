@@ -2,6 +2,7 @@ import Actor from '@/classes/pongGame/Actor';
 import gsap from "gsap";
 import Ball from '@/classes/pongGame/Ball';
 import Player from '@/classes/pongGame/Player';
+import Head from "next/head";
 import { socket } from "@/classes/socket";
 import { SP } from 'next/dist/shared/lib/utils';
 import { useRouter } from 'next/router';
@@ -26,6 +27,7 @@ export default function Pong() {
     let playerTurn = "p1";
 
     const game = useRef(null);
+    const ballPos = useRef(null);
     const canvasRef = useRef(null);
 
     const drawBg = () => {
@@ -115,7 +117,7 @@ export default function Pong() {
                 // console.log("L", lobby.current);
                 //  
                 if (lobby.current) {
-                    console.log(playerControl, newYPos);
+                    //console.log(playerControl, newYPos);
                     sequenceNumber++;
                     // console.log("NEWP:", newYPos);
                     // console.log("PO:", oldPos);
@@ -179,6 +181,17 @@ export default function Pong() {
             // Update Ball new Pos
             if (ball) {
 
+                if (ballPos.current !== null) {
+
+                    console.log("BALL", ballPos.current.x, ballPos.current.y);
+
+                    ball.x     = ballPos.current.x;
+                    ball.y     = ballPos.current.y;
+                    ball.angle = ballPos.current.angle;
+                    ball.speed = ballPos.current.speed;
+
+                }
+
                 if (!ball.player && ball.direction !== null) {
                     const p = ball.direction === true ? "p1" : "p2";
                     // console.log(playerTurn, ball.direction, p);
@@ -204,20 +217,15 @@ export default function Pong() {
                     }
 
 
-
                 }
-
             }
 
             let currentPlayer = actors.get(playerControl);
             let otherPlayer = playerControl === "p1" ? actors.get("p2") : actors.get("p1");
 
-            // THIS IS TO UPDATE THE PLAYER MOVEMENTS
+            // THIS IS TO UPDATE THE PLAYER MOVEMENTS WHEN ITS IN MULTIPLAYER
             if (lobby.current && game.current && game.current !== null) {
-                // console.log(game.current);
 
-                // Player Interpolation
-                // && host.y !== game.current.hostPos
                 if (game.current.hostPos !== null && game.current.opponentPos !== null) {
                     if (lobby.current.isHost === true) {
                         currentPlayer.y = game.current.hostPos;
@@ -235,6 +243,8 @@ export default function Pong() {
                 if (game.current.opponentPoints !== null)
                     opp.points = game.current.opponentPoints;
 
+
+                // Start of Player Reconciliation
                 const lastServerInputIndex = playerInputs.findIndex(i => {
                     const playerSeq = lobby.current.isHost === true ? game.current.hostSeq : game.current.oppSeq;
                     return playerSeq === i.sequenceNumber;
@@ -243,28 +253,25 @@ export default function Pong() {
                 if (lastServerInputIndex > -1)
                     playerInputs.splice(0, lastServerInputIndex + 1);
 
-                // console.log("PI: ", playerInputs);
                 playerInputs.forEach(i => {
-                    console.log("CP", currentPlayer);
-                    
                     currentPlayer.y += i.pos;
                 })
+                // End of Player Reconciliation
 
-
-                
+                // Player interpolation for other players
                 if (!isNaN(otherPlayer.y) && otherPlayer.y !== otherPlayerNewPos) {
-                    console.log("iif", interpolationSpeed, otherPlayer, otherPlayerNewPos);
-                    
+                    //console.log("iif", interpolationSpeed, otherPlayer, otherPlayerNewPos);
+
                     interpolationFrame = 0;
                     interpolationSpeed = (otherPlayerNewPos - otherPlayer.y) / 5;
 
-                    if(interpolationSpeed > SPEED)
-                       interpolationSpeed = SPEED 
-                    else if(interpolationSpeed < SPEED * -1)
+                    if (interpolationSpeed > SPEED)
+                        interpolationSpeed = SPEED
+                    else if (interpolationSpeed < SPEED * -1)
                         interpolationSpeed = SPEED * -1
 
                     otherPlayerNewPos = undefined;
-                }else        
+                } else
                     otherPlayer.y = otherPlayerNewPos;
 
                 game.current = null;
@@ -275,7 +282,8 @@ export default function Pong() {
                 // use otherPlayer.y property
             }
 
-
+            // Maybe also for us?
+            // Player interpolation for other players
             if (lobby.current && interpolationFrame < 15 && otherPlayer.y !== otherPlayerNewPos) {
                 otherPlayer.y += interpolationSpeed;
                 interpolationFrame += 3;
@@ -302,13 +310,10 @@ export default function Pong() {
 
 
             // Draw Points
-            const p1p = actors.get("p1").points;
-            const p2p = actors.get("p2").points;
-
             context.font = "64px serif";
             context.fillStyle = "#fff"
-            context.fillText(p1p, canvas.width * 0.4, canvas.height * 0.2);
-            context.fillText(p2p, canvas.width * 0.6, canvas.height * 0.2);
+            context.fillText(host.points, canvas.width * 0.4, canvas.height * 0.2);
+            context.fillText(opp.points, canvas.width * 0.6, canvas.height * 0.2);
 
             animationFrameId = window.requestAnimationFrame(render);
         }
@@ -336,9 +341,6 @@ export default function Pong() {
             socket.auth = { sessionID };
         }
 
-
-        console.log("test");
-
         if (socket.connected === false)
             socket.connect();
         else {
@@ -365,10 +367,22 @@ export default function Pong() {
         }
 
         function EUpdatePlayers(e) {
-            const { hostPos, opponentPos, hostPoints, opponentPoints } = e;
+            const { hostPos, opponentPos, hostPoints, opponentPoints, ball } = e;
+
+            console.log("g", e);
 
             // console.log("E", e);
             game.current = e;
+
+        }
+
+        function EUpdateBall(e) {
+            const { x, y, speed, angle, direction } = e.ball;
+
+            console.log("b", e);
+
+            // console.log("E", e);
+            ballPos.current = e.ball;
 
         }
 
@@ -407,13 +421,15 @@ export default function Pong() {
         socket.on("session", ESession);
         socket.on("gameCanStart", EGameCanStart);
         socket.on("updatePlayers", EUpdatePlayers);
+        socket.on("updateBall", EUpdateBall);
         socket.on("disconnect", EDisconnect)
         socket.on("connect", EConnected);
-
+        
         return () => {
             socket.off("session", ESession);
             socket.off("gameCanStart", EGameCanStart);
             socket.off("updatePlayers", EUpdatePlayers);
+            socket.on("updateBall", EUpdateBall);
             socket.off("disconnect", EDisconnect);
             socket.off("connect", EConnected);
         }
@@ -422,6 +438,9 @@ export default function Pong() {
 
     return (
         <>
+            <Head>
+                {/* <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"></meta> */}
+            </Head>
             <div style={{ margin: "0", padding: "0", position: "relative" }}>
 
                 {!lobby.current ?

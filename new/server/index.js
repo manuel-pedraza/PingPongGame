@@ -9,6 +9,7 @@ const { InMemorySessionStore } = require("./classes/sessionStore.js");
 const userStates = require("./enums/userStates.js");
 const Game = require("./classes/Game.js");
 const { error, log } = require("node:console");
+const Ball = require("./classes/Ball.js");
 const sessionStore = new InMemorySessionStore();
 
 const io = new Server({
@@ -227,20 +228,20 @@ io.on("connection", (socket) => {
 
     })
 
-    socket.on("startGame", (room) => {
+    socket.on("startGame", (room, arena) => {
 
         let lobby = lstLobbies.find(r => r.name === room);
         socket.user.state = userStates.inGame;
 
-        if (!lobby) {
+        if (!lobby || !arena) {
             socket.emit("errorStartingGame", "Error starting the game");
         }
         else {
-            games.set(room, new Game());
+            let g = new Game();
+            g.setArena(arena);
+            games.set(room, g);
             socket.broadcast.to(room).emit("startedGame", { lobbyName: room });
         }
-
-
     })
 
     socket.on("mainMenu", () => {
@@ -297,13 +298,12 @@ io.on("connection", (socket) => {
         // socket.join(name);
         let lobbyTmp = lstLobbies[index];
         let game = games.get(name);
-        
+
         if (lobby.isHost === true) {
             game.hostSocket = socket.id;
         }
         else {
             game.opponentSocket = socket.id;
-
         }
         console.log("G1", game);
         games.set(name, game);
@@ -311,7 +311,7 @@ io.on("connection", (socket) => {
         if (game.hostSocket && game.opponentSocket) {
             lobbyTmp.gameStarted = true;
             console.log("GAME CAN START");
-
+            game.start();
             games.set(name, game);
             io.to(name).emit("gameCanStart", { host: lobbyTmp.host, opponent: lobbyTmp.opponent, points: lobbyTmp.points });
 
@@ -321,32 +321,46 @@ io.on("connection", (socket) => {
 
     })
 
+    let frame = 0;
+
     setInterval(() => {
 
         games.forEach((game, room) => {
 
             // console.log(room);
+            if (game.hasStarted && !game.hasEnded) {
+                frame++;
+                
+                if(game.hostPoints < 1 && game.opponentPoints < 1){
+                }
 
-            if (!game.hasGameEnded && (game.hasPosChanged || game.havePointsChanged)) {
+                if ((game.hasPosChanged || game.havePointsChanged)) {
+                    /*
+                    OPTIONAL: Implement sending some data and not ALL the data. Help with some performence IG
+                    const positions =  {};
+                    const points = game.havePointsChanged ? {hostPoints: game.hostPoints, opponentPoints: } : {};
+                    const game = {};
+                    */
 
-                /*
-                OPTIONAL: Implement sending some data and not ALL the data. Help with some performence IG
-                const positions =  {};
-                const points = game.havePointsChanged ? {hostPoints: game.hostPoints, opponentPoints: } : {};
-                const game = {};
-                */
+                   io.in(room).emit("updatePlayers", {
+                        hostPos: game.hostPos.y,
+                        opponentPos: game.opponentPos.y,
+                        hostPoints: game.hostPoints,
+                        opponentPoints: game.opponentPoints,
+                        hostSeq: game.hostSeq,
+                        oppSeq: game.oppSeq,
+                    });
 
-                io.in(room).emit("updatePlayers", {
-                    hostPos: game.hostPos,
-                    opponentPos: game.opponentPos,
-                    hostPoints: game.hostPoints,
-                    opponentPoints: game.opponentPoints,
-                    hostSeq: game.hostSeq,
-                    oppSeq: game.oppSeq
+                    game.resetChangedProps();
+                }
+
+                io.in(room).emit("updateBall", {
+                    ball: game.getBallObject()
                 });
-
-                game.resetChangedProps();
+                
+                game.ballLoop();
             }
+
         });
 
     }, 15);
@@ -356,9 +370,9 @@ io.on("connection", (socket) => {
 
         let game = games.get(roomName);
 
-        // TODO: Validate request socket is the host socket or the opponnent socket
         if (!socket.rooms.has(roomName) || !game) return;
-
+        
+        // This validates if the request socket is the host socket or the opponnent socket
         const isHost = game.hostSocket === socket.id;
 
         if (isHost)

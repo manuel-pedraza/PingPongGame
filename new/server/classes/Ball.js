@@ -1,14 +1,17 @@
-const { default: Actor } = require("./Actor");
+const BALL_SIZE = 30;
+const BALL_MAX_SPEED = 4;
+const BALL_MID_SPEED = 8
+const BALL_MIN_SPEED = 12;
+const PlayerConsts = require("./Consts")
 
-export default class Ball extends Actor {
-    constructor(ctx, devicePixelRatio, x, y) {
-        super(ctx, devicePixelRatio, x, y);
-        this.ballSize = 30;
+class Ball {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
         this.angle = undefined;
         this.direction = null;
         this.player = undefined;
         this.speed = 8;
-        this.color = 0;
     }
 
     setAngle(newAngle) {
@@ -20,34 +23,24 @@ export default class Ball extends Actor {
         this.angle = newAngle;
     }
 
-    draw() {
-
-        // '#ff0000'
-        this.ctx.fillStyle = `hsl(${this.color}, 100%, 50%)`;
-        this.ctx.fillRect(
-            this.x - (this.ballSize / 2) * this.devicePixelRatio, this.y - (this.ballSize / 2) * this.devicePixelRatio, 
-            this.ballSize * this.devicePixelRatio, this.ballSize * this.devicePixelRatio
-        );
-        this.ctx.fill()
+    isOutOfBounds(xLimit) {
+        return this.x <= 0 || this.x >= xLimit;
     }
 
-    isOutOfBounds() {
-        return this.x <= 0 || this.x >= this.ctx.canvas.width;
-    }
-
-    hasCollidedWithWall(newY) {
-        return newY - (this.ballSize / 2) <= 0 || newY + (this.ballSize / 2) >= this.ctx.canvas.height;
+    hasCollidedWithWall(newY, yLimit) {
+        return newY - (BALL_SIZE / 2) <= 0 || newY + (BALL_SIZE / 2) >= yLimit;
     }
 
     hasCollidedWithPlayer(newX, newY) {
 
-        const r = newX + (this.ballSize / 2);
-        const l = newX - (this.ballSize / 2);
-        const t = newY - (this.ballSize / 2);
-        const b = newY + (this.ballSize / 2);
+        const r = newX + (BALL_SIZE / 2);
+        const l = newX - (BALL_SIZE / 2);
+        const t = newY - (BALL_SIZE / 2);
+        const b = newY + (BALL_SIZE / 2);
 
-        const { x, y, width, height } = this.player;
-
+        const { x, y } = this.player;
+        const height = PlayerConsts.height();
+        const width  = PlayerConsts.width(); 
 
         const isLInside = this.direction === true && l >= x - width / 2 && l <= x + width / 2;
         const isRInside = this.direction === false && r >= x - width / 2 && r <= x + width / 2;
@@ -79,7 +72,7 @@ export default class Ball extends Actor {
 
         if (this.hasCollidedWithWall(newY)) {
 
-            const goDown = newY - (this.ballSize / 2) <= 0
+            const goDown = newY - (BALL_SIZE / 2) <= 0
             const angle90 = Math.abs(this.angle % 90);
             let addAngle = 0;
 
@@ -94,7 +87,7 @@ export default class Ball extends Actor {
         } else if (this.hasCollidedWithPlayer(newX, newY) !== undefined) {
 
             const xPivot = this.direction === true ? 1 : -1;
-            this.x = (this.player.x + this.player.width / 2 * xPivot) + this.ballSize / 2 * xPivot;
+            this.x = (this.player.x + PlayerConsts.width() / 2 * xPivot) + BALL_SIZE / 2 * xPivot;
             this.y = newY;
 
             // const newSpeed = this.player.avgSpeed * 2;
@@ -120,13 +113,19 @@ export default class Ball extends Actor {
 
     }
 
-    reset() {
-        this.x = this.ctx.canvas.width / 2;
-        this.y = this.ctx.canvas.height / 2;
+    reset(arena) {
+        this.x = arena.x / 2;
+        this.y = arena.y / 2;
         this.direction = null;
         this.angle = undefined;
         this.player = undefined;
         this.speed = 8;
     }
 
+    toObject(){
+        return {x: this.x, y: this.y, speed: this.speed, angle: this.angle, direction: this.direction};
+    }
+
 }
+
+module.exports = Ball;

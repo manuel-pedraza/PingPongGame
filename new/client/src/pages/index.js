@@ -102,10 +102,11 @@ export default function Home() {
               lobbyName: roomName
             };
 
-            socket.emit("startGame", roomName);
-
-            alert("game started");
-
+            const devicePixelRatio = window.devicePixelRatio || 1;
+            const height = window.innerHeight * devicePixelRatio;
+            const width = window.innerWidth * devicePixelRatio;
+            socket.emit("startGame", roomName, { x: width, y: height});
+            // alert("game started");
             router.push({ pathname: "/pong", query: lobby });
 
           }}
@@ -205,6 +206,7 @@ export default function Home() {
     function EStartedGame(lobby) {
 
       console.log(lobby);
+      
       router.push({ pathname: "/pong", query: lobby });
 
     }
