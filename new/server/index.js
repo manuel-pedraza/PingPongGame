@@ -238,6 +238,7 @@ io.on("connection", (socket) => {
         }
         else {
             let g = new Game();
+            g.maxPoints = lobby.points;
             g.setArena(arena);
             games.set(room, g);
             socket.broadcast.to(room).emit("startedGame", { lobbyName: room });
@@ -325,53 +326,77 @@ io.on("connection", (socket) => {
 
     setInterval(() => {
 
+        frame++;
         games.forEach((game, room) => {
-
             // console.log(room);
+
             if (game.hasStarted && !game.hasEnded) {
-                frame++;
-                
-                if(game.hostPoints < 1 && game.opponentPoints < 1){
-                }
 
-                if ((game.hasPosChanged || game.havePointsChanged)) {
-                    /*
-                    OPTIONAL: Implement sending some data and not ALL the data. Help with some performence IG
-                    const positions =  {};
-                    const points = game.havePointsChanged ? {hostPoints: game.hostPoints, opponentPoints: } : {};
-                    const game = {};
-                    */
+                // console.log("X", game.ball.x, "Y", game.ball.y);
 
-                   io.in(room).emit("updatePlayers", {
+
+                if (game.hasPosChanged) {
+                    io.in(room).emit("updatePlayers", {
                         hostPos: game.hostPos.y,
                         opponentPos: game.opponentPos.y,
-                        hostPoints: game.hostPoints,
-                        opponentPoints: game.opponentPoints,
                         hostSeq: game.hostSeq,
                         oppSeq: game.oppSeq,
                     });
 
-                    game.resetChangedProps();
+                    game.hasPosChanged = false;
+                }
+
+
+                if (game.havePointsChanged) {
+                    io.in(room).emit("updatePoints", {
+                        host: game.hostPoints,
+                        opp: game.opponentPoints,
+                    });
+
+                    game.havePointsChanged = false;
                 }
 
                 io.in(room).emit("updateBall", {
                     ball: game.getBallObject()
                 });
-                
+
                 game.ballLoop();
+            } else if (game.hasEnded) {
+
+                // CLEARS THE GAME
+                if (game.endRequests >= 3){
+                    const isDeleted = games.delete(room);
+                    console.log("DELETED ROOM:", room, isDeleted);
+                }else{
+                    io.in(room).emit("updatePlayers", {
+                        hostPos: game.hostPos.y,
+                        opponentPos: game.opponentPos.y,
+                        hostSeq: game.hostSeq,
+                        oppSeq: game.oppSeq,
+                    });
+
+                    io.in(room).emit("updatePoints", {
+                        host: game.hostPoints,
+                        opp: game.opponentPoints,
+                    });
+
+                    io.in(room).emit("updateBall", {
+                        ball: game.getBallObject()
+                    });
+                    game.endRequests++;
+                }
             }
 
         });
 
     }, 15);
 
-
     socket.on("EPong", (roomName, { event, value, }, sequenceNumber) => {
 
         let game = games.get(roomName);
 
-        if (!socket.rooms.has(roomName) || !game) return;
-        
+        if (!socket.rooms.has(roomName) || !game || game.hasEnded) return;
+
         // This validates if the request socket is the host socket or the opponnent socket
         const isHost = game.hostSocket === socket.id;
 

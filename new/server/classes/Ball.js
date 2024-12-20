@@ -11,7 +11,7 @@ class Ball {
         this.angle = undefined;
         this.direction = null;
         this.player = undefined;
-        this.speed = 8;
+        this.speed = BALL_MID_SPEED;
     }
 
     setAngle(newAngle) {
@@ -56,7 +56,7 @@ class Ball {
 
     }
 
-    updatePos() {
+    updatePos(yLimit) {
         if (this.angle === undefined || this.direction === null)
             return;
 
@@ -70,7 +70,7 @@ class Ball {
         const newX = this.x + (xDelta * this.speed);
         const newY = this.y + (yDelta * this.speed);
 
-        if (this.hasCollidedWithWall(newY)) {
+        if (this.hasCollidedWithWall(newY, yLimit)) {
 
             const goDown = newY - (BALL_SIZE / 2) <= 0
             const angle90 = Math.abs(this.angle % 90);
@@ -119,7 +119,7 @@ class Ball {
         this.direction = null;
         this.angle = undefined;
         this.player = undefined;
-        this.speed = 8;
+        this.speed = BALL_MID_SPEED;
     }
 
     toObject(){

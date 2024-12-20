@@ -28,6 +28,7 @@ export default function Pong() {
 
     const game = useRef(null);
     const ballPos = useRef(null);
+    const points = useRef(null);
     const canvasRef = useRef(null);
 
     const drawBg = () => {
@@ -182,11 +183,10 @@ export default function Pong() {
             if (ball) {
 
                 if (ballPos.current !== null) {
+                    // console.log("BALL", ballPos.current.x, ballPos.current.y);
 
-                    console.log("BALL", ballPos.current.x, ballPos.current.y);
-
-                    ball.x     = ballPos.current.x;
-                    ball.y     = ballPos.current.y;
+                    ball.x = ballPos.current.x;
+                    ball.y = ballPos.current.y;
                     ball.angle = ballPos.current.angle;
                     ball.speed = ballPos.current.speed;
 
@@ -236,13 +236,6 @@ export default function Pong() {
                         otherPlayerNewPos = game.current.hostPos;
                     }
                 }
-
-                if (game.current.hostPoints !== null)
-                    host.points = game.current.hostPoints;
-
-                if (game.current.opponentPoints !== null)
-                    opp.points = game.current.opponentPoints;
-
 
                 // Start of Player Reconciliation
                 const lastServerInputIndex = playerInputs.findIndex(i => {
@@ -308,6 +301,10 @@ export default function Pong() {
                 a.draw();
             });
 
+            if (points.current !== null) {
+                host.points = points.current.host;
+                opp.points = points.current.opp;
+            }
 
             // Draw Points
             context.font = "64px serif";
@@ -367,22 +364,20 @@ export default function Pong() {
         }
 
         function EUpdatePlayers(e) {
-            const { hostPos, opponentPos, hostPoints, opponentPoints, ball } = e;
-
-            console.log("g", e);
-
-            // console.log("E", e);
+            // console.log("g", e);
             game.current = e;
 
         }
 
         function EUpdateBall(e) {
-            const { x, y, speed, angle, direction } = e.ball;
-
-            console.log("b", e);
-
-            // console.log("E", e);
+            // console.log("b", e);
             ballPos.current = e.ball;
+
+        }
+
+        function EUpdatePoints(e) {
+            // console.log("POINTS:", e);
+            points.current = e;
 
         }
 
@@ -422,14 +417,16 @@ export default function Pong() {
         socket.on("gameCanStart", EGameCanStart);
         socket.on("updatePlayers", EUpdatePlayers);
         socket.on("updateBall", EUpdateBall);
+        socket.on("updatePoints", EUpdatePoints);
         socket.on("disconnect", EDisconnect)
         socket.on("connect", EConnected);
-        
+
         return () => {
             socket.off("session", ESession);
             socket.off("gameCanStart", EGameCanStart);
             socket.off("updatePlayers", EUpdatePlayers);
-            socket.on("updateBall", EUpdateBall);
+            socket.off("updateBall", EUpdateBall);
+            socket.off("updatePoints", EUpdatePoints);
             socket.off("disconnect", EDisconnect);
             socket.off("connect", EConnected);
         }

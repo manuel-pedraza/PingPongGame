@@ -7,7 +7,7 @@ class Game {
     constructor() {
         this.hostSocket = undefined;
         this.opponentSocket = undefined;
-        // this.havePointsChanged = false;
+        this.havePointsChanged = false;
         this.hasPosChanged = false;
         this.hasStarted = false;
         this.hasEnded = false;
@@ -18,9 +18,10 @@ class Game {
         this.opponentPos = undefined;
         this.hostPoints = 0;
         this.opponentPoints = 0;
-        this.maxPoints = 0;
+        this.maxPoints = 1;
         this.ball = undefined;
         this.arena = undefined;
+        this.endRequests = 0;
     }
 
     lookForEndGame() {
@@ -30,16 +31,16 @@ class Game {
 
     resetChangedProps() {
         this.hasPosChanged = false;
-        // this.havePointsChanged = false;
+        this.havePointsChanged = false;
     }
 
     addPoint(isHost) {
-        if (isHost)
+        if (isHost === true)
             this.hostPoints++;
         else
             this.opponentPoints++;
+        this.havePointsChanged = true; 
         this.lookForEndGame();
-        // this.havePointsChanged = true;
 
     }
 
@@ -104,7 +105,7 @@ class Game {
             this.ball.setNewDirection();
 
         } else {
-            this.ball.updatePos();
+            this.ball.updatePos(this.arena.y);
             
             if (this.ball.isOutOfBounds(this.arena.x)) {
                 console.log("OOB | X", this.ball.x, "Y", this.ball.y, "T", this.turn, this.ball.direction);
