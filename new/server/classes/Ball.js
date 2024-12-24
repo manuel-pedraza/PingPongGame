@@ -32,6 +32,7 @@ class Ball {
     }
 
     hasCollidedWithPlayer(newX, newY) {
+        // console.log(this.direction, "HCWP", this.player, "BALL", newX, newY);
 
         const r = newX + (BALL_SIZE / 2);
         const l = newX - (BALL_SIZE / 2);

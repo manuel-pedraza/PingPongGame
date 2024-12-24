@@ -306,7 +306,7 @@ io.on("connection", (socket) => {
         else {
             game.opponentSocket = socket.id;
         }
-        console.log("G1", game);
+        // console.log("G1", game);
         games.set(name, game);
 
         if (game.hostSocket && game.opponentSocket) {
@@ -334,7 +334,6 @@ io.on("connection", (socket) => {
 
                 // console.log("X", game.ball.x, "Y", game.ball.y);
 
-
                 if (game.hasPosChanged) {
                     io.in(room).emit("updatePlayers", {
                         hostPos: game.hostPos.y,
@@ -345,7 +344,6 @@ io.on("connection", (socket) => {
 
                     game.hasPosChanged = false;
                 }
-
 
                 if (game.havePointsChanged) {
                     io.in(room).emit("updatePoints", {
@@ -386,7 +384,6 @@ io.on("connection", (socket) => {
                     game.endRequests++;
                 }
             }
-
         });
 
     }, 15);

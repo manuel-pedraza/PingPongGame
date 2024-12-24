@@ -29,6 +29,17 @@ class Game {
         return this.hasEnded;
     }
 
+    lookForPlayerOOB(playerY, newY){
+        if (playerY + newY + PlayerConsts.height() / 2 > this.arena.y)
+            playerY = this.arena.y - PlayerConsts.height() / 2;
+        else if (playerY + newY - PlayerConsts.height() / 2 < 0)
+            playerY = PlayerConsts.height() / 2;
+        else
+            playerY += newY;
+
+        return playerY;
+    }
+
     resetChangedProps() {
         this.hasPosChanged = false;
         this.havePointsChanged = false;
@@ -66,9 +77,12 @@ class Game {
         if (isNaN(this.hostPos.y)){
             this.hostPos.y = newY;
         }
-        else {
+        else if (this.hostPos){
+            // Fixes player out of bounds
+            this.hostPos.y = this.lookForPlayerOOB(this.hostPos.y, newY);
+        }else 
             this.hostPos.y += newY;
-        }
+            
         this.hasPosChanged = true;
     }
 
@@ -78,9 +92,11 @@ class Game {
         if (isNaN(this.opponentPos.y)){
             this.opponentPos.y = newY;
         }
-        else {
+        else if (this.opponentPos){
+            this.opponentPos.y = this.lookForPlayerOOB(this.opponentPos.y, newY);
+        }else
             this.opponentPos.y += newY;
-        }
+
         this.hasPosChanged = true;
     }
 
@@ -97,7 +113,6 @@ class Game {
         //Ball Logic
         if (!this.ball.player && this.ball.direction !== null) {
             this.ball.player = this.ball.direction === true ? this.hostPos : this.opponentPos;
-            this.ball.setNewDirection();
         }
 
         if (this.ball.direction === null) {
@@ -108,8 +123,8 @@ class Game {
             this.ball.updatePos(this.arena.y);
             
             if (this.ball.isOutOfBounds(this.arena.x)) {
-                console.log("OOB | X", this.ball.x, "Y", this.ball.y, "T", this.turn, this.ball.direction);
-                this.addPoint(!this.turn);
+                this.addPoint(!this.ball.direction);
+                //console.log("OOB | X", this.ball.x, "Y", this.ball.y, "T", this.turn, this.ball.direction, "P:", this.hostPoints, this.opponentPoints);
                 this.turn = !this.turn;
                 this.ball.reset(this.arena);
             }

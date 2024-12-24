@@ -276,25 +276,11 @@ export default function Pong() {
             }
 
             // Maybe also for us?
-            // Player interpolation for other players
+            // Player interpolation for other player
             if (lobby.current && interpolationFrame < 15 && otherPlayer.y !== otherPlayerNewPos) {
                 otherPlayer.y += interpolationSpeed;
                 interpolationFrame += 3;
             }
-
-
-            // Fix players out of bounds
-            /*
-            if (currentPlayer.y > canvas.height)
-                currentPlayer.y = canvas.height;
-            else if (currentPlayer.y < 0)
-                currentPlayer.y = 0;
-
-            if (otherPlayer.y > canvas.height)
-                otherPlayer.y = canvas.height;
-            else if (otherPlayer.y < 0)
-                otherPlayer.y = 0;
-            */
 
             // Draw actors
             actors.forEach(a => {
