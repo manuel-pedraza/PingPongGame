@@ -123,7 +123,7 @@ class Ball {
         this.speed = BALL_MID_SPEED;
     }
 
-    toObject(){
+    toJSON(){
         return {x: this.x, y: this.y, speed: this.speed, angle: this.angle, direction: this.direction};
     }
 

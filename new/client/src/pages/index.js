@@ -27,18 +27,26 @@ export default function Home() {
 
   function btnBackToMenu() {
     return (
-      <button onClick={(e) => {
-        socket.emit("mainMenu");
-        setState("mainMenu")
-      }}>
-        Menu
-      </button>
+      <div style={{display: "flex", justifyItems: "left", minWidth: "18vw"}}>
+        <button style={{margin: "7px"}} onClick={(e) => {
+          socket.emit("mainMenu");
+          setState("mainMenu")
+        }}>
+          Menu
+        </button>
+        {
+          state !== "mainMenu" ?
+            <h2>{userName}</h2>
+            :
+            <></>
+        }
+      </div>
     )
   }
 
   const getActualState = useMemo(() => {
     // const connection = tryToConnect();
-    console.log("STATE: ", state);
+    // console.log("STATE: ", state);
     switch (state) {
       case "name":
         return <AskName
@@ -105,14 +113,13 @@ export default function Home() {
             const devicePixelRatio = window.devicePixelRatio || 1;
             const height = window.innerHeight * devicePixelRatio;
             const width = window.innerWidth * devicePixelRatio;
-            socket.emit("startGame", roomName, { x: width, y: height});
+            socket.emit("startGame", roomName, { x: width, y: height });
             // alert("game started");
             router.push({ pathname: "/pong", query: lobby });
 
           }}
         />;
       default:
-
         return (<></>);
     }
   }, [roomList, state, opponent, roomPoints, roomName, userName])
@@ -121,7 +128,7 @@ export default function Home() {
     if (isConnected === false)
       setState("cantConnectToServer");
 
-    console.log(isConnected);
+    // console.log(isConnected);
   }, [isConnected]);
 
   useEffect(() => {
@@ -205,8 +212,8 @@ export default function Home() {
 
     function EStartedGame(lobby) {
 
-      console.log(lobby);
-      
+      // console.log(lobby);
+
       router.push({ pathname: "/pong", query: lobby });
 
     }
@@ -305,10 +312,10 @@ export default function Home() {
       <Head>
       </Head>
       <main>
-        <div>
-          <h1>Hello there</h1>
+        <div style={{ height: "100vh", display: 'flex', justifyContent: "center", alignItems: "center", flexDirection: "column", msOverflowY: "hidden" }}>
+          <h1>Welcome to Pong Game</h1>
           {
-            !(state === "name" || state === "cantConnectToServer") && userName !== undefined ?
+            !(state === "name" || state === "cantConnectToServer") && userName !== undefined && state === "mainMenu" ?
               <h2>{userName}</h2>
               :
               <></>

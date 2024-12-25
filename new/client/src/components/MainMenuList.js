@@ -4,15 +4,17 @@ import React from 'react'
 export function AskName({ onChange, onClick }) {
     return (
         <div>
+            <h2>Enter your name: </h2>
             <input type='text' onChange={(e) => {
                 onChange?.(e);
             }} />
-            <button onClick={(e) => {
-                onClick?.(e);
-
-            }}>
-                Send Name
-            </button>
+            <div style={{ display: 'flex', justifyContent: "center", alignItems: "center", flexDirection: "column", margin: "8px" }}>
+                <button onClick={(e) => {
+                    onClick?.(e);
+                }}>
+                    Send Name
+                </button>
+            </div>
         </div>
     );
 }
@@ -27,8 +29,8 @@ export function CantConnectToServer() {
 
 export function MainMenu({ createRoomOnClick, roomListOnClick }) {
     return (
-        <>
-            <button onClick={(e) => {
+        <div style={{ display: "flex", flexDirection: "column" }}>
+            <button style={{ marginBottom: "12px" }} onClick={(e) => {
 
                 createRoomOnClick?.();
 
@@ -42,47 +44,48 @@ export function MainMenu({ createRoomOnClick, roomListOnClick }) {
             }}>
                 See Room List
             </button>
-        </>
+        </div>
     )
 }
 
 export function AskRoomParams({ btnBackToMenu, roomNameOnChangeEvent, roomPointsOnChangeEvent, createRoomOnClickEvent }) {
     return (
-        <>
+        <div >
             {btnBackToMenu()}
-            <input type='text' onChange={(e) => {
+
+            <div style={{ display: "flex", flexDirection: "column" }}>
+                <h2>Room name:</h2>
+                <input type='text' onChange={(e) => {
+                    roomNameOnChangeEvent?.(e);
+                }} />
+
+                <h2>Points:</h2>
+                <input type='text' onChange={(e) => {
 
 
-                roomNameOnChangeEvent?.(e);
+                    roomPointsOnChangeEvent?.(e);
 
 
-            }} />
-            <input type='text' onChange={(e) => {
+                }} />
+                <button style={{marginTop: "12px"}} onClick={(e) => {
+                    createRoomOnClickEvent?.();
 
-
-                roomPointsOnChangeEvent?.(e);
-
-
-            }} />
-            <button onClick={(e) => {
-                createRoomOnClickEvent?.();
-
-            }}>
-                Send room parameters
-            </button>
-        </>
+                }}>
+                    Send room parameters
+                </button>
+            </div>
+        </div>
     )
 }
 
 export function RoomListMenu({ btnBackToMenu, roomList, joinRoom }) {
 
     return (
-        <>
+        <div>
             {btnBackToMenu()}
             <h1>Room List</h1>
-            <ul className='room-list'>
+            <ul className='room-list' style={{ overflowY: "scroll", minHeight: "24px", maxHeight: "60vh", minWidth: "75vw" }}>
                 {roomList.map((r, index) => {
-                    console.log("I:", typeof index, (index % 2));
                     return (
                         <li key={`room-${r.name}`} className={`room-list-element${index % 2 === 1 ? " odd" : ""}`} tabIndex="0"
                             onClick={(e) => {
@@ -106,7 +109,7 @@ export function RoomListMenu({ btnBackToMenu, roomList, joinRoom }) {
                     )
                 })}
             </ul>
-        </>
+        </div>
     )
 }
 
@@ -115,21 +118,22 @@ export function RoomLobby({ btnBackToMenu, isHost, roomName, userName, opponent,
         {btnBackToMenu()}
 
         <h1>{`Lobby: ${roomName}`}</h1>
-        <h2 style={{ color: "#f00" }}>{isHost === true ? userName : opponent}</h2>
-        <h2>{isHost === false ? userName : opponent}</h2>
+        <h2 style={{ color: "#f00" }}>Host: {isHost === true ? userName : opponent}</h2>
+        <h2>Opponent: {isHost === false ? userName : opponent}</h2>
 
-        {isHost === true && opponent ?
+        {isHost === true  ?
+            opponent ?
             <button
                 onClick={(e) => {
                     startOnClick?.(e);
 
-                    
+
                 }}
 
             >Start game</button>
+                : <></>
             :
-
-            <></>
+            <h5 style={{color: "#555"}}>Wait for the host to start the game</h5>
         }
 
     </>)

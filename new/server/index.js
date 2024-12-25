@@ -23,14 +23,17 @@ const io = new Server({
     pingTimeout: 5000
 });
 
-let lstLobbies = [
-    new Lobby({
+let lstLobbies = [];
+/*
+for (let index = 0; index < 100; index++) {
+    lstLobbies.push(new Lobby({
         name: '````hi````',
         host: 'z',
         opponent: 'x'
-    })
-];
-
+    }));
+    
+}
+*/
 let games = new Map();
 
 
@@ -176,8 +179,11 @@ io.on("connection", (socket) => {
     socket.on("createRoom", (room, name, points) => {
         let lobby = lstLobbies.find(r => r.name === room);
 
-        if (lobby) {
-            socket.emit("errorCreatingRoom", "Room name already taken");
+        if (lobby || room === null || room === "") {
+            socket.emit("errorCreatingRoom", "Room name already taken or it is an invalid name");
+            return;
+        } else if (isNaN(points) || points <= 0){
+            socket.emit("errorCreatingRoom", "Points are not valid");
             return;
         }
 
@@ -223,9 +229,7 @@ io.on("connection", (socket) => {
             socket.emit("joinedRoomFromList", lobby);
             socket.leave("requestRoomList");
 
-
         }
-
     })
 
     socket.on("startGame", (room, arena) => {
@@ -322,11 +326,11 @@ io.on("connection", (socket) => {
 
     })
 
-    let frame = 0;
+    // let frame = 0;
 
     setInterval(() => {
 
-        frame++;
+        // frame++;
         games.forEach((game, room) => {
             // console.log(room);
 
@@ -355,7 +359,7 @@ io.on("connection", (socket) => {
                 }
 
                 io.in(room).emit("updateBall", {
-                    ball: game.getBallObject()
+                    ball: game.getBallJSON()
                 });
 
                 game.ballLoop();
@@ -379,7 +383,7 @@ io.on("connection", (socket) => {
                     });
 
                     io.in(room).emit("updateBall", {
-                        ball: game.getBallObject()
+                        ball: game.getBallJSON()
                     });
                     game.endRequests++;
                 }

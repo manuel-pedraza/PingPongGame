@@ -82,7 +82,7 @@ class Game {
             this.hostPos.y = this.lookForPlayerOOB(this.hostPos.y, newY);
         }else 
             this.hostPos.y += newY;
-            
+
         this.hasPosChanged = true;
     }
 
@@ -140,8 +140,8 @@ class Game {
         this.ball = new Ball(this.arena.x / 2, this.arena.y / 2);
     }
 
-    getBallObject(){
-        return this.ball.toObject();
+    getBallJSON(){
+        return this.ball.toJSON();
     }
 }
 

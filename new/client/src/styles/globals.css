@@ -16,17 +16,19 @@ li.room-list-element {
 }
 
 li.room-list-element.odd {
-  background-color: #99000055;
-
+  /* background-color: #99000055; */
+  background-color: #aaa;
+  
 }
 
 li.room-list-element:hover {
   cursor: pointer;
-  background-color: #55555530;
+  background-color: #000;
+  color: #fff;
 }
 
 li.room-list-element.odd:hover {
-  background-color: #99000030;
+  /* background-color: #99000030; */
 }
 
 
