@@ -6,12 +6,14 @@ class Lobby {
         host = undefined,
         opponent = undefined,
         gameStarted = false,
-        points = 10,
+        gameEnded = false,
+        points = 1
     } = {}) {
         this.name = name;
         this.host = host;
         this.opponent = opponent;
         this.gameStarted = gameStarted;
+        this.gameEnded = gameEnded;
         this.points = points;
     }
 

@@ -304,6 +304,11 @@ io.on("connection", (socket) => {
         let lobbyTmp = lstLobbies[index];
         let game = games.get(name);
 
+        if(lobbyTmp.hasEnded === true){
+            console.log("GAME HAS ENDED");
+            return;
+        }
+
         if (lobby.isHost === true) {
             game.hostSocket = socket.id;
         }
@@ -370,6 +375,10 @@ io.on("connection", (socket) => {
                     const isDeleted = games.delete(room);
                     console.log("DELETED ROOM:", room, isDeleted);
                 }else{
+                    let lobby = lstLobbies.find(r => r.name === room);
+                    lobby.hasEnded = true;
+                    io.in(room).emit("finishGame", { winner: game.hostPoints >= game.maxPoints ? lobby.host : lobby.opponent});
+
                     io.in(room).emit("updatePlayers", {
                         hostPos: game.hostPos.y,
                         opponentPos: game.opponentPos.y,

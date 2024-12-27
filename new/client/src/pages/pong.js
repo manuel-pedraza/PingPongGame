@@ -7,6 +7,8 @@ import { socket } from "@/classes/socket";
 import { SP } from 'next/dist/shared/lib/utils';
 import { useRouter } from 'next/router';
 import React, { act, useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link';
+
 
 export default function Pong() {
 
@@ -15,6 +17,7 @@ export default function Pong() {
     const [isConnected, setIsConnected] = useState(undefined);
     // const [game, setGame] = useState(undefined);
     const [gameHasStarted, setGameHasStarted] = useState(false);
+    const [gameHasEnded, setGameHasEnded] = useState(false);
     const router = useRouter();
 
 
@@ -29,6 +32,7 @@ export default function Pong() {
     const game = useRef(null);
     const ballPos = useRef(null);
     const points = useRef(null);
+    const winner = useRef(null);
     const canvasRef = useRef(null);
 
     const drawBg = () => {
@@ -173,6 +177,8 @@ export default function Pong() {
         let ballColor = 0;
 
         function render() {
+
+
             // console.log(e.elapsedTime);
             context.clearRect(0, 0, canvas.width, canvas.height);
             frameCount++;
@@ -367,6 +373,13 @@ export default function Pong() {
 
         }
 
+        function EFinishGame(e) {
+            console.log("GHS", gameHasStarted);
+
+            winner.current = e.winner;
+            setGameHasEnded(true);
+        }
+
         function ESession(e) {
 
             const { sessionID, userID, user } = e;
@@ -404,6 +417,7 @@ export default function Pong() {
         socket.on("updatePlayers", EUpdatePlayers);
         socket.on("updateBall", EUpdateBall);
         socket.on("updatePoints", EUpdatePoints);
+        socket.on("finishGame", EFinishGame);
         socket.on("disconnect", EDisconnect)
         socket.on("connect", EConnected);
 
@@ -413,6 +427,7 @@ export default function Pong() {
             socket.off("updatePlayers", EUpdatePlayers);
             socket.off("updateBall", EUpdateBall);
             socket.off("updatePoints", EUpdatePoints);
+            socket.off("finishGame", EFinishGame);
             socket.off("disconnect", EDisconnect);
             socket.off("connect", EConnected);
         }
@@ -426,27 +441,45 @@ export default function Pong() {
             </Head>
             <div style={{ margin: "0", padding: "0", position: "relative" }}>
 
-                {!lobby.current ?
-                    <></>
-                    :
-                    gameHasStarted === false ?
-                        <div style={{
-                            position: "absolute",
-                            height: "100%", width: "100%",
-                            background: "#ffffff80", display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            flexDirection: "column"
-                        }}> <h1>Waiting for players ...</h1>
-                            <div className='loader' />
+                {gameHasEnded === true ?
+                    <div style={{
+                        position: "absolute",
+                        height: "100%", width: "100%",
+                        background: "#ffffff80", display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        flexDirection: "column"
+                    }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", width: "40%", height: "40%", backgroundColor: "#fff", borderRadius: "4px" }}>
+                            <h1>{`The winner is: ${winner.current}`}</h1>
+                            <button
+                                href="/"
+                                className="button"
+                                onClick={() => router.push("/", undefined, {shallow: false})}
+>
+                                Back
+                            </button>
                         </div>
-                        :
-                        <>
-                            {/* animation start of a game ig */}
-                        </>
+                    </div>
+                    :
+                    lobby.current ? <></> :
+                        gameHasStarted === false ?
+                            <div style={{
+                                position: "absolute",
+                                height: "100%", width: "100%",
+                                background: "#ffffff80", display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                flexDirection: "column"
+                            }}> <h1>Waiting for players ...</h1>
+                                <div className='loader' />
+                            </div>
+                            :
+                            <></>
+
                 }
                 <canvas ref={canvasRef} id="pongGame" width="100%" height="100%" style={{ margin: "0", padding: "0" }}></canvas>
-            </div>
+            </div >
         </>
     )
 }

@@ -122,7 +122,8 @@ export default function Home() {
       default:
         return (<></>);
     }
-  }, [roomList, state, opponent, roomPoints, roomName, userName])
+  }, [roomList, state, opponent, roomPoints, roomName, userName]);
+  
 
   useEffect(() => {
     if (isConnected === false)
@@ -134,7 +135,7 @@ export default function Home() {
   useEffect(() => {
     const sessionID = localStorage.getItem("sessionID");
 
-
+    
     if (sessionID) {
       socket.auth = { sessionID };
     }
@@ -145,6 +146,9 @@ export default function Home() {
         setState("cantConnectToServer");
       }
     };
+
+    
+
 
     setInterval(intervalIsNotConnected, 12000);
     // console.log(socket);
@@ -255,6 +259,12 @@ export default function Home() {
     }
 
     function WEOnload(e) {
+
+      if (!window.location.hash) {
+        window.location = window.location + '#loaded';
+        window.location.reload();
+      }
+      
       socket.connect();
     }
 
