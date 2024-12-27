@@ -12,6 +12,8 @@ const { error, log } = require("node:console");
 const Ball = require("./classes/Ball.js");
 const sessionStore = new InMemorySessionStore();
 
+let loopStarted = false;
+
 const io = new Server({
     cors: {
         origin: "http://localhost:3000",
@@ -24,16 +26,6 @@ const io = new Server({
 });
 
 let lstLobbies = [];
-/*
-for (let index = 0; index < 100; index++) {
-    lstLobbies.push(new Lobby({
-        name: '````hi````',
-        host: 'z',
-        opponent: 'x'
-    }));
-    
-}
-*/
 let games = new Map();
 
 
@@ -182,7 +174,7 @@ io.on("connection", (socket) => {
         if (lobby || room === null || room === "") {
             socket.emit("errorCreatingRoom", "Room name already taken or it is an invalid name");
             return;
-        } else if (isNaN(points) || points <= 0){
+        } else if (isNaN(points) || points <= 0) {
             socket.emit("errorCreatingRoom", "Points are not valid");
             return;
         }
@@ -304,7 +296,7 @@ io.on("connection", (socket) => {
         let lobbyTmp = lstLobbies[index];
         let game = games.get(name);
 
-        if(lobbyTmp.hasEnded === true){
+        if (lobbyTmp.hasEnded === true) {
             console.log("GAME HAS ENDED");
             return;
         }
@@ -332,74 +324,81 @@ io.on("connection", (socket) => {
     })
 
     // let frame = 0;
+    if (loopStarted === false) {
 
-    setInterval(() => {
+        setInterval(() => {
 
-        // frame++;
-        games.forEach((game, room) => {
-            // console.log(room);
+            // frame++;
+            games.forEach((game, room) => {
+                // console.log(room);
 
-            if (game.hasStarted && !game.hasEnded) {
+                if (game.hasStarted && !game.hasEnded) {
 
-                // console.log("X", game.ball.x, "Y", game.ball.y);
+                    // console.log("X", game.ball.x, "Y", game.ball.y);
 
-                if (game.hasPosChanged) {
-                    io.in(room).emit("updatePlayers", {
-                        hostPos: game.hostPos.y,
-                        opponentPos: game.opponentPos.y,
-                        hostSeq: game.hostSeq,
-                        oppSeq: game.oppSeq,
-                    });
+                    if (game.hasPosChanged) {
+                        io.in(room).emit("updatePlayers", {
+                            hostPos: game.hostPos.y,
+                            opponentPos: game.opponentPos.y,
+                            hostSeq: game.hostSeq,
+                            oppSeq: game.oppSeq,
+                        });
 
-                    game.hasPosChanged = false;
-                }
+                        game.hasPosChanged = false;
+                    }
 
-                if (game.havePointsChanged) {
-                    io.in(room).emit("updatePoints", {
-                        host: game.hostPoints,
-                        opp: game.opponentPoints,
-                    });
+                    if (game.havePointsChanged) {
+                        io.in(room).emit("updatePoints", {
+                            host: game.hostPoints,
+                            opp: game.opponentPoints,
+                        });
 
-                    game.havePointsChanged = false;
-                }
-
-                io.in(room).emit("updateBall", {
-                    ball: game.getBallJSON()
-                });
-
-                game.ballLoop();
-            } else if (game.hasEnded) {
-
-                // CLEARS THE GAME
-                if (game.endRequests >= 3){
-                    const isDeleted = games.delete(room);
-                    console.log("DELETED ROOM:", room, isDeleted);
-                }else{
-                    let lobby = lstLobbies.find(r => r.name === room);
-                    lobby.hasEnded = true;
-                    io.in(room).emit("finishGame", { winner: game.hostPoints >= game.maxPoints ? lobby.host : lobby.opponent});
-
-                    io.in(room).emit("updatePlayers", {
-                        hostPos: game.hostPos.y,
-                        opponentPos: game.opponentPos.y,
-                        hostSeq: game.hostSeq,
-                        oppSeq: game.oppSeq,
-                    });
-
-                    io.in(room).emit("updatePoints", {
-                        host: game.hostPoints,
-                        opp: game.opponentPoints,
-                    });
+                        game.havePointsChanged = false;
+                    }
 
                     io.in(room).emit("updateBall", {
                         ball: game.getBallJSON()
                     });
-                    game.endRequests++;
-                }
-            }
-        });
 
-    }, 15);
+                    game.ballLoop();
+                } else if (game.hasEnded) {
+
+                    // CLEARS THE GAME
+                    if (game.endRequests >= 3) {
+                        const isDeleted = games.delete(room);
+                        console.log("DELETED ROOM:", room, isDeleted);
+                        let lobby = lstLobbies.find(r => r.name === room);
+                        lstLobbies.filter(r => r.name != room);
+                        io.in(room).socketsLeave();
+                    } else {
+                        let lobby = lstLobbies.find(r => r.name === room);
+                        lobby.hasEnded = true;
+                        io.in(room).emit("finishGame", { winner: game.hostPoints >= game.maxPoints ? lobby.host : lobby.opponent });
+
+                        io.in(room).emit("updatePlayers", {
+                            hostPos: game.hostPos.y,
+                            opponentPos: game.opponentPos.y,
+                            hostSeq: game.hostSeq,
+                            oppSeq: game.oppSeq,
+                        });
+
+                        io.in(room).emit("updatePoints", {
+                            host: game.hostPoints,
+                            opp: game.opponentPoints,
+                        });
+
+                        io.in(room).emit("updateBall", {
+                            ball: game.getBallJSON()
+                        });
+                        game.endRequests++;
+                    }
+                }
+            });
+
+        }, 15);
+        loopStarted = true;
+    }
+
 
     socket.on("EPong", (roomName, { event, value, }, sequenceNumber) => {
 

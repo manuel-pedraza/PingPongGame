@@ -1,7 +1,7 @@
 const BALL_SIZE = 30;
-const BALL_MAX_SPEED = 4;
-const BALL_MID_SPEED = 8
-const BALL_MIN_SPEED = 12;
+const BALL_MAX_SPEED = 6;
+const BALL_MID_SPEED = 12
+const BALL_MIN_SPEED = 18;
 const PlayerConsts = require("./Consts")
 
 class Ball {

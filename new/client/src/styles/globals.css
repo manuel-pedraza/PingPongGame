@@ -36,7 +36,7 @@ li.room-list-element.odd {
   
 }
 
-li.room-list-element:hover {
+li.room-list-element:hover, li.room-list-element:focus {
   cursor: pointer;
   background-color: #000;
   color: #fff;
