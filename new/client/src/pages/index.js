@@ -28,7 +28,7 @@ export default function Home() {
   function btnBackToMenu() {
     return (
       <div style={{display: "flex", justifyItems: "left", minWidth: "18vw"}}>
-        <button style={{margin: "7px"}} onClick={(e) => {
+        <button className='btn-menu' style={{margin: "7px"}} onClick={(e) => {
           socket.emit("mainMenu");
           setState("mainMenu")
         }}>
@@ -96,7 +96,6 @@ export default function Home() {
         return <RoomListMenu roomList={roomList} btnBackToMenu={btnBackToMenu}
           joinRoom={(e, room) => {
             socket.emit("requestJoinRoomByRList", room, userName);
-
           }}
         />;
       case "cantConnectToServer":
@@ -322,7 +321,9 @@ export default function Home() {
       <Head>
       </Head>
       <main>
-        <div style={{ height: "100vh", display: 'flex', justifyContent: "center", alignItems: "center", flexDirection: "column", msOverflowY: "hidden" }}>
+        <div style={{ height: "100vh", display: 'flex', justifyContent: "center", alignItems: "center", flexDirection: "column", msOverflowY: "hidden",
+          backgroundColor: "#454545", color: "#eee"
+         }}>
           <h1>Welcome to Pong Game</h1>
           {
             !(state === "name" || state === "cantConnectToServer") && userName !== undefined && state === "mainMenu" ?

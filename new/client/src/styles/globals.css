@@ -1,8 +1,25 @@
-*{
+* {
   overflow: hidden;
 }
 
-.button, .button:link, .button:visited{
+.btn-menu {
+  font-weight: bold;
+  background-color: #fff;
+  border: #fff solid 1px;
+  color: #000;
+  padding: 0.4rem;
+  border-radius: 5%;
+}
+
+.btn-menu:hover {
+  background-color: hsl(0, 0%, 73%);
+  color: #000;
+  cursor: pointer;
+}
+
+.button,
+.button:link,
+.button:visited {
   background-color: #000;
   border: #000 solid 1px;
   color: #fff;
@@ -10,11 +27,14 @@
   border-radius: 5%;
 }
 
-.button:hover, .button:active, .button:focus {
-  background-color: #bbb;
+.button:hover,
+.button:active,
+.button:focus {
+  background-color: hsl(0, 0%, 73%);
   color: #000;
   padding: 1rem;
   border-radius: 5%;
+  cursor: pointer;
 }
 
 ul.room-list {
@@ -25,18 +45,20 @@ ul.room-list {
 
 li.room-list-element {
   padding: 4px 15px;
+  color: #000;
   list-style: none;
-  background-color: #55555555;
+  background-color: #fff;
 
 }
 
 li.room-list-element.odd {
   /* background-color: #99000055; */
   background-color: #aaa;
-  
+
 }
 
-li.room-list-element:hover, li.room-list-element:focus {
+li.room-list-element:hover,
+li.room-list-element:focus {
   cursor: pointer;
   background-color: #000;
   color: #fff;
@@ -48,8 +70,10 @@ li.room-list-element.odd:hover {
 
 
 .loader {
-  border: 16px solid #f3f3f3; /* Light grey */
-  border-top: 16px solid #3498db; /* Blue */
+  border: 16px solid #f3f3f3;
+  /* Light grey */
+  border-top: 16px solid #3498db;
+  /* Blue */
   border-radius: 50%;
   width: 120px;
   height: 120px;
@@ -57,6 +81,11 @@ li.room-list-element.odd:hover {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }

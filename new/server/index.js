@@ -26,6 +26,12 @@ const io = new Server({
 });
 
 let lstLobbies = [];
+
+/*
+for (let index = 0; index < 20; index++) {
+    lstLobbies.push(new Lobby({name: "testG", host: "P1", gameStarted: false}))    
+}
+*/
 let games = new Map();
 
 
