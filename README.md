@@ -1,7 +1,15 @@
-# Pong Game 
-Pong project to get used with sockets and multi-client app.
+# Pong Game
 
-## File structure
+A multiplayer Pong game built with **Socket.io**, designed to enhance familiarity with real-time socket connections and multi-client applications.
+
+## Features
+- **Real-time multiplayer** using WebSockets.
+- **Lobby system** to manage player connections.
+- **Queue system** for organizing matches.
+- **Modular structure** with separate client and server directories.
+- **Styled UI** with reusable components.
+
+## File Structure
 ```
 ./
 ├── new
@@ -28,6 +36,8 @@ Pong project to get used with sockets and multi-client app.
 │   │           └── globals.css
 │   └── server
 │       ├── classes
+│       │   ├── Ball.js
+│       │   ├── Consts.js
 │       │   ├── Game.js
 │       │   ├── Lobby.js
 │       │   ├── User.js
@@ -45,25 +55,40 @@ Pong project to get used with sockets and multi-client app.
         │   ├── Lobby.js
         │   └── User.js
         └── index.js
-```    
-There are two type **big** directories. The **new** and **old** directories are two separate type of applications. The two have a server and a client app, but the **old** directory was created as an itroduction to the socket.io library.
-
-```
-./
-├── new
-└── old
 ```
 
-## Start project
+The project contains two main directories:
+- **`new/`** - The latest version of the Pong game, with an improved architecture.
+- **`old/`** - The initial implementation created as an introduction to **Socket.io**.
 
-To start a client:
+## Installation & Setup
+
+### Install dependencies
+Before running the project, install the required dependencies:
+```bash
+npm install
 ```
+
+### Start the Client
+Run the client development server:
+```bash
 npm run dev
 ```
 
-To start a server: 
-```
+### Start the Server
+Start the server using either of the following commands:
+```bash
 npm start 
-or
+# or
 node index.js
 ```
+
+## Technologies Used
+- **Node.js** - Backend runtime
+- **Socket.io** - WebSockets for real-time communication
+- **Next.js** - Frontend framework
+- **React.js** - Frontend framework
+
+
+## Author
+Developed by Manuel A. Pedraza S.
