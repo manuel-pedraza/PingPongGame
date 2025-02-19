@@ -5,7 +5,6 @@ A multiplayer Pong game built with **Socket.io**, designed to enhance familiarit
 ## Features
 - **Real-time multiplayer** using WebSockets.
 - **Lobby system** to manage player connections.
-- **Queue system** for organizing matches.
 - **Modular structure** with separate client and server directories.
 - **Styled UI** with reusable components.
 
